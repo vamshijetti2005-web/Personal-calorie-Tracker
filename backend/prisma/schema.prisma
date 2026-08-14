@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+}
+
+model User {
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  displayName  String      @map("display_name")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  goals        Goal[]
+  foodEntries  FoodEntry[]
+
+  @@map("users")
+}
+
+/// Immutable goal versions. Updating goals inserts a new row so
+/// historical goal-vs-actual reports stay accurate after later changes.
+model Goal {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyCalorieTarget Int      @map("daily_calorie_target")
+  proteinGrams       Decimal  @map("protein_grams") @db.Decimal(8, 2)
+  carbsGrams         Decimal  @map("carbs_grams") @db.Decimal(8, 2)
+  fatGrams           Decimal  @map("fat_grams") @db.Decimal(8, 2)
+  weightGoalKg       Decimal  @map("weight_goal_kg") @db.Decimal(6, 2)
+  effectiveFrom      DateTime @map("effective_from")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([userId, effectiveFrom])
+  @@map("goals")
+}
+
+model FoodEntry {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealType     MealType @map("meal_type")
+  foodName     String   @map("food_name")
+  quantity     Decimal  @db.Decimal(8, 2)
+  servingUnit  String   @map("serving_unit")
+  calories     Decimal  @db.Decimal(8, 2)
+  proteinGrams Decimal  @map("protein_grams") @db.Decimal(8, 2)
+  carbsGrams   Decimal  @map("carbs_grams") @db.Decimal(8, 2)
+  fatGrams     Decimal  @map("fat_grams") @db.Decimal(8, 2)
+  vitaminCMg   Decimal  @default(0) @map("vitamin_c_mg") @db.Decimal(8, 2)
+  calciumMg    Decimal  @default(0) @map("calcium_mg") @db.Decimal(8, 2)
+  ironMg       Decimal  @default(0) @map("iron_mg") @db.Decimal(8, 2)
+  vitaminDIU   Decimal  @default(0) @map("vitamin_d_iu") @db.Decimal(8, 2)
+  potassiumMg  Decimal  @default(0) @map("potassium_mg") @db.Decimal(8, 2)
+  consumedAt   DateTime @map("consumed_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, consumedAt])
+  @@index([userId, mealType, consumedAt])
+  @@map("food_entries")
+}
