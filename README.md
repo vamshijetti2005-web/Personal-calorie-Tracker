@@ -14,10 +14,12 @@ historically accurate goals, and understanding nutrition trends.
 | AI calorie extraction | Gemini image analysis with confidence, warnings, and editable form prefill |
 | API / frontend separation | React communicates with Spring Boot only through REST APIs |
 | Database persistence | PostgreSQL managed by Flyway and Spring Data JPA |
+| Multi-user bonus | JWT signup/login with BCrypt passwords and query-layer data isolation |
 
 ## Stack
 
 - Java 21, Spring Boot 4, Spring Data JPA
+- Spring Security resource server, HMAC JWT, and BCrypt
 - PostgreSQL 16
 - Flyway migrations
 - React 19, Vite, TypeScript, Tailwind CSS, Recharts
@@ -84,6 +86,8 @@ Default database settings (override with env vars if needed):
 | `CLIENT_ORIGIN` | `http://localhost:5173` |
 | `GEMINI_API_KEY` | Empty (AI endpoint disabled) |
 | `GEMINI_MODEL` | `gemini-3.5-flash` |
+| `JWT_SECRET` | Development-only default; set 32+ random bytes in production |
+| `JWT_EXPIRATION_HOURS` | `24` |
 
 ### Enable Gemini image extraction
 
@@ -110,9 +114,31 @@ cd backend
 Without a key, the rest of the app works and the extraction endpoint returns a clear `503
 AI_UNAVAILABLE` error.
 
-## Step 2 APIs
+## Authentication
 
-This step uses one seeded demo user. Authentication and multi-user isolation are a later bonus.
+All goal, entry, report, and AI endpoints require:
+
+```text
+Authorization: Bearer <token>
+```
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | Create an account and receive a JWT |
+| `POST` | `/api/auth/login` | Verify a BCrypt password and receive a JWT |
+| `GET` | `/api/auth/me` | Return the authenticated user |
+
+Seeded demo credentials:
+
+```text
+Email: demo@nourish.local
+Password: DemoPass123!
+```
+
+The demo password is encoded with BCrypt on first startup. Set a strong,
+environment-specific `JWT_SECRET` before deployment.
+
+## Core resource APIs
 
 Every list API uses `limit` (1–100) and `offset` (0 or greater).
 
@@ -202,6 +228,9 @@ npm run dev
 
 Open `http://localhost:5173`. Vite proxies `/api` to the Java backend during local development.
 
+Sign in with the demo credentials above or register a new account. Each user's
+goals, meals, and reports are isolated by `user_id` in backend queries.
+
 The frontend includes:
 
 - Today dashboard with current calorie/macro progress
@@ -268,6 +297,7 @@ java -jar target/calorie-tracker-0.0.1-SNAPSHOT.jar
 backend/src/main/java/com/nourish/tracker/
   api/          REST controllers, request validation, response DTOs, errors
   service/      goal, diary, reporting, and Gemini business logic
+  security/     JWT issuing and authenticated-user resolution
   repository/   Spring Data repositories and SQL report aggregation
   domain/       JPA entities and meal type
   config/       cross-origin API configuration
@@ -284,5 +314,6 @@ frontend/src/
 - Dates and report boundaries use UTC.
 - Goals take effect at UTC midnight and remain immutable once effective.
 - Meal type is one of `BREAKFAST`, `LUNCH`, `DINNER`, `SNACKS`.
-- A seeded demo user keeps core development moving without auth. The `users` relationship is present so JWT multi-user support can be added later without a schema rewrite.
+- JWTs are stateless and stored in browser local storage for this web demo.
+- Every data read/write is scoped to the authenticated user's UUID in the backend.
 - Micronutrient reference values are display context, not medical advice.

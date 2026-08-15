@@ -6,7 +6,7 @@ Nourish runs as two independent applications:
 
 ```text
 React / Vite browser app
-        │ JSON REST + multipart image upload
+        │ Bearer JWT + JSON REST + multipart image upload
         ▼
 Spring Boot API
         │ JPA + parameterized JDBC aggregation
@@ -34,6 +34,8 @@ api (controllers, requests, responses, centralized errors)
 - Services own rules such as UTC date ranges, immutable goal history, ownership,
   and extraction status.
 - Spring Data repositories handle entity persistence.
+- Spring Security validates HMAC JWTs before protected controllers run.
+- `CurrentUserService` resolves the JWT subject to a persisted user.
 - `ReportRepository` uses parameterized JDBC because zero-filled time series,
   lateral historical-goal lookup, and grouped nutrition totals are clearer and
   more efficient in SQL.
@@ -49,9 +51,11 @@ users 1 ─── * food_entries
 
 ### Users
 
-The core submission runs in single-user demo mode using a seeded user. Every
-goal and entry still has a `user_id`, so JWT-based multi-user isolation can be
-added without rewriting nutrition tables.
+Users register with a unique normalized email and BCrypt password hash. Login
+issues a signed, expiring JWT whose subject is the user UUID. All goal, entry,
+and report services obtain that UUID from the authenticated security context;
+resource lookups return not found when an ID belongs to another user. A seeded
+demo account makes reviewer setup immediate without bypassing authentication.
 
 ### Goals
 
@@ -145,9 +149,21 @@ resources, business conflicts, oversized images, and unexpected errors. The
 React API client converts these responses to typed `ApiError` objects and keeps
 form state intact on failures.
 
-## Deliberate scope
+## Authentication and isolation
 
-The core assignment is complete in single-user mode. JWT authentication,
-conversational chat, and PDF import are bonus features and were intentionally
-deferred until after the required goal, diary, report, and image-extraction flows
-were complete and tested.
+`POST /api/auth/register`, `POST /api/auth/login`, and the health endpoint are
+public. Every other API requires a valid Bearer token. The server is stateless:
+it stores no HTTP session and verifies the HMAC signature and expiry on every
+request.
+
+The browser stores the token in local storage for this self-contained demo,
+attaches it in the typed API client, clears it on HTTP 401, and redirects to
+login. A production application with a same-site deployment could instead use a
+secure HTTP-only cookie plus CSRF protection.
+
+## Deliberate remaining scope
+
+The core assignment and JWT multi-user bonus are complete. Conversational chat
+and PDF import remain optional bonuses and were intentionally deferred until
+after the required goal, diary, report, image-extraction, and account-isolation
+flows were complete and tested.
