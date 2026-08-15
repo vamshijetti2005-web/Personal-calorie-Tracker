@@ -16,6 +16,17 @@ const suggestions = [
   'Help me log lunch.',
 ]
 
+const toolLabels: Record<string, string> = {
+  get_current_goal: 'current goal',
+  create_goal: 'goal update',
+  log_meal: 'meal logging',
+  list_entries: 'diary entries',
+  get_calorie_report: 'calorie report',
+  get_macro_report: 'macro report',
+  get_micro_summary: 'micronutrient summary',
+  get_goal_vs_actual: 'goal comparison',
+}
+
 export function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([welcome])
   const [draft, setDraft] = useState('')
@@ -109,7 +120,10 @@ export function ChatPage() {
             <ErrorBanner error={error} />
             {lastTools.length > 0 && (
               <p className="mb-2 text-xs text-stone-400">
-                Used: {lastTools.join(', ')}
+                Assistant checked:{' '}
+                {lastTools
+                  .map((tool) => toolLabels[tool] ?? 'nutrition data')
+                  .join(' · ')}
               </p>
             )}
             <form className="flex gap-2" onSubmit={submit}>
