@@ -2,7 +2,7 @@
 
 React frontend + Java (Spring Boot) backend. Built step by step.
 
-**Current step:** 4 — backend APIs and React frontend.
+**Current step:** 5 — complete core app with Gemini image extraction.
 
 ## Stack
 
@@ -10,6 +10,7 @@ React frontend + Java (Spring Boot) backend. Built step by step.
 - PostgreSQL 16
 - Flyway migrations
 - React 19, Vite, TypeScript, Tailwind CSS, Recharts
+- Gemini 3.5 Flash image understanding with structured JSON output
 
 ## Schema
 
@@ -20,8 +21,6 @@ users 1──* food_entries
 
 - **goals** are versioned. Saving a goal inserts a new row with `effective_from` so later changes do not rewrite history.
 - **food_entries** store meal type, quantity, calories, macros, and five micros (vitamin C, calcium, iron, vitamin D, potassium).
-
-AI photo extraction comes in the next step.
 
 ## Run the backend
 
@@ -49,6 +48,31 @@ Default database settings (override with env vars if needed):
 | `DATABASE_URL` | `jdbc:postgresql://localhost:5432/calorie_tracker` |
 | `DATABASE_USER` | `calorie` |
 | `DATABASE_PASSWORD` | `calorie` |
+
+### Enable Gemini image extraction
+
+Create a Gemini Developer API key in [Google AI Studio](https://aistudio.google.com/app/apikey).
+The limited free tier is sufficient for development. Do not commit the key.
+
+PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY="your-key"
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+macOS/Linux:
+
+```bash
+export GEMINI_API_KEY="your-key"
+cd backend
+./mvnw spring-boot:run
+```
+
+`GEMINI_MODEL` optionally overrides the default stable model, `gemini-3.5-flash`.
+Without a key, the rest of the app works and the extraction endpoint returns a clear `503
+AI_UNAVAILABLE` error.
 
 ## Step 2 APIs
 
@@ -110,7 +134,7 @@ Validation and application errors use:
 
 ## Step 3 report APIs
 
-Reports are aggregated on the server from persisted entries. The future React app will consume
+Reports are aggregated on the server from persisted entries. The React app consumes
 these responses directly instead of calculating chart data from paginated diary rows.
 
 | Method | Path | Purpose |
@@ -148,6 +172,26 @@ The frontend includes:
 
 For a separately hosted frontend, set `VITE_API_BASE_URL` to the backend origin and configure
 backend CORS before building. Local development needs neither because it uses the Vite proxy.
+
+## Step 5 AI image extraction
+
+`POST /api/ai/extract` accepts a multipart `image` field containing JPEG, PNG, or WebP up to
+5 MB. The backend verifies the file signature before sending base64 image data to Gemini. API
+keys never reach the browser.
+
+The response includes:
+
+- `status`: `ok`, `partial`, or `failed`
+- Structured serving, calorie, macro, and micronutrient fields
+- `confidence`: `high`, `medium`, or `low`
+- Human-readable notes and warnings
+
+The meal form pre-fills only non-null extracted fields. Users must review and explicitly save the
+entry. Gemini failure, quota, configuration, and malformed-image cases are shown clearly rather
+than silently producing a meal.
+
+The Gemini free tier may use submitted content to improve Google products. Use non-sensitive test
+images and review Google's current API terms before handling personal images.
 
 ## Assumptions
 

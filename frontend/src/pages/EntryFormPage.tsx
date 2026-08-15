@@ -12,7 +12,12 @@ import {
   Select,
 } from '../components/UI'
 import { fromLocalInput, toLocalInput } from '../dates'
-import type { EntryInput, MealType } from '../types'
+import type {
+  EntryInput,
+  ExtractionResponse,
+  MealType,
+  NutritionExtraction,
+} from '../types'
 
 const initialEntry: EntryInput = {
   mealType: 'LUNCH',
@@ -37,6 +42,9 @@ export function EntryFormPage() {
   const [entry, setEntry] = useState<EntryInput>(initialEntry)
   const [loading, setLoading] = useState(Boolean(id))
   const [saving, setSaving] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysis, setAnalysis] = useState<ExtractionResponse | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -68,6 +76,13 @@ export function EntryFormPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview)
+    },
+    [preview],
+  )
+
   function update<K extends keyof EntryInput>(key: K, value: EntryInput[K]) {
     setEntry((current) => ({ ...current, [key]: value }))
     setFieldErrors((current) => {
@@ -98,6 +113,75 @@ export function EntryFormPage() {
     }
   }
 
+  function applyExtraction(extraction: NutritionExtraction) {
+    setEntry((current) => ({
+      ...current,
+      ...(extraction.foodName != null
+        ? { foodName: extraction.foodName }
+        : {}),
+      ...(extraction.quantity != null
+        ? { quantity: Number(extraction.quantity) }
+        : {}),
+      ...(extraction.servingUnit != null
+        ? { servingUnit: extraction.servingUnit }
+        : {}),
+      ...(extraction.calories != null
+        ? { calories: Number(extraction.calories) }
+        : {}),
+      ...(extraction.proteinGrams != null
+        ? { proteinGrams: Number(extraction.proteinGrams) }
+        : {}),
+      ...(extraction.carbsGrams != null
+        ? { carbsGrams: Number(extraction.carbsGrams) }
+        : {}),
+      ...(extraction.fatGrams != null
+        ? { fatGrams: Number(extraction.fatGrams) }
+        : {}),
+      ...(extraction.vitaminCMg != null
+        ? { vitaminCMg: Number(extraction.vitaminCMg) }
+        : {}),
+      ...(extraction.calciumMg != null
+        ? { calciumMg: Number(extraction.calciumMg) }
+        : {}),
+      ...(extraction.ironMg != null
+        ? { ironMg: Number(extraction.ironMg) }
+        : {}),
+      ...(extraction.vitaminDIU != null
+        ? { vitaminDIU: Number(extraction.vitaminDIU) }
+        : {}),
+      ...(extraction.potassiumMg != null
+        ? { potassiumMg: Number(extraction.potassiumMg) }
+        : {}),
+    }))
+  }
+
+  async function analyzeImage(file?: File) {
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size cannot exceed 5 MB')
+      return
+    }
+
+    setPreview((current) => {
+      if (current) URL.revokeObjectURL(current)
+      return URL.createObjectURL(file)
+    })
+    setAnalyzing(true)
+    setAnalysis(null)
+    setError(null)
+    try {
+      const result = await api.ai.extract(file)
+      setAnalysis(result)
+      applyExtraction(result.extraction)
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Could not analyze the image',
+      )
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
   if (loading) return <LoadingBlock />
 
   return (
@@ -109,6 +193,88 @@ export function EntryFormPage() {
       />
 
       <ErrorBanner error={error} />
+
+      {!id && (
+        <Card className="overflow-hidden border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+          <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="grid size-8 place-items-center rounded-xl bg-amber-400 text-lg">
+                  ✦
+                </span>
+                <h2 className="font-display text-2xl text-emerald-950">
+                  Fill from a photo
+                </h2>
+              </div>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-stone-500">
+                Upload a nutrition label or a plate of food. Gemini will suggest
+                values; review every field before saving.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <label className="inline-flex min-h-10 cursor-pointer items-center rounded-xl bg-emerald-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                  {analyzing ? 'Analyzing…' : 'Choose image'}
+                  <input
+                    className="sr-only"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={analyzing}
+                    onChange={(event) =>
+                      void analyzeImage(event.target.files?.[0])
+                    }
+                  />
+                </label>
+                <span className="text-xs text-stone-400">
+                  JPEG, PNG, or WebP · max 5 MB
+                </span>
+              </div>
+            </div>
+            {preview && (
+              <img
+                src={preview}
+                alt="Selected food"
+                className="size-28 rounded-2xl border border-white object-cover shadow-lg"
+              />
+            )}
+          </div>
+
+          {analysis && (
+            <div className="mt-5 rounded-2xl border border-amber-200/70 bg-white/80 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    analysis.status === 'ok'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : analysis.status === 'partial'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-red-100 text-red-700'
+                  }`}
+                >
+                  {analysis.status === 'ok'
+                    ? 'Extraction complete'
+                    : analysis.status === 'partial'
+                      ? 'Partial result'
+                      : 'Could not identify nutrition'}
+                </span>
+                <span className="text-xs capitalize text-stone-400">
+                  {analysis.extraction.confidence} confidence
+                </span>
+              </div>
+              {analysis.extraction.notes && (
+                <p className="mt-2 text-sm text-stone-600">
+                  {analysis.extraction.notes}
+                </p>
+              )}
+              {analysis.extraction.warnings.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-800">
+                  {analysis.extraction.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card>
         <h2 className="font-display text-2xl text-emerald-950">Meal details</h2>
