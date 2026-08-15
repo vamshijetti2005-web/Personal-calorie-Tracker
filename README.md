@@ -2,7 +2,7 @@
 
 React frontend + Java (Spring Boot) backend. Built step by step.
 
-**Current step:** 2 — backend goal and meal-entry CRUD APIs.
+**Current step:** 3 — backend CRUD and nutrition-report APIs.
 
 ## Stack
 
@@ -20,7 +20,7 @@ users 1──* food_entries
 - **goals** are versioned. Saving a goal inserts a new row with `effective_from` so later changes do not rewrite history.
 - **food_entries** store meal type, quantity, calories, macros, and five micros (vitamin C, calcium, iron, vitamin D, potassium).
 
-Reports, AI extraction, and the React app come in later steps.
+AI extraction and the React app come in later steps.
 
 ## Run the backend
 
@@ -106,6 +106,24 @@ Validation and application errors use:
   }
 }
 ```
+
+## Step 3 report APIs
+
+Reports are aggregated on the server from persisted entries. The future React app will consume
+these responses directly instead of calculating chart data from paginated diary rows.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/reports/calories?from=2026-08-01&to=2026-08-15&granularity=day` | Zero-filled calorie trend by day or week |
+| `GET` | `/api/reports/macros?from=2026-08-01&to=2026-08-15&granularity=week` | Protein, carb, and fat totals by day or week |
+| `GET` | `/api/reports/micros?from=2026-08-01&to=2026-08-15` | Micronutrient totals, daily averages, and reference targets |
+| `GET` | `/api/reports/goal-vs-actual?from=2026-08-01&to=2026-08-15` | Daily actuals against the goal version effective that day |
+
+`granularity` accepts `day` (default) or `week`. Weeks begin Monday. Partial weeks are clipped
+to the requested range. Report ranges are limited to 366 days.
+
+Micronutrient reference targets are common adult values used only as a chart scale; they are not
+medical advice.
 
 ## Assumptions
 
