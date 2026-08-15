@@ -15,6 +15,7 @@ historically accurate goals, and understanding nutrition trends.
 | API / frontend separation | React communicates with Spring Boot only through REST APIs |
 | Database persistence | PostgreSQL managed by Flyway and Spring Data JPA |
 | Multi-user bonus | JWT signup/login with BCrypt passwords and query-layer data isolation |
+| Conversational bonus | Gemini chat with secured tools for meals, goals, and reports |
 
 ## Stack
 
@@ -238,6 +239,7 @@ The frontend includes:
 - Date-range diary with meal filtering and pagination
 - Goal form and paginated version history
 - Calorie, macro, micronutrient, and historical goal-vs-actual charts
+- Gemini chat for natural-language meal logging, goal checks, and summaries
 
 For a separately hosted frontend, set `VITE_API_BASE_URL` to the backend origin
 before building and set backend `CLIENT_ORIGIN` to the frontend origin. Local
@@ -262,6 +264,22 @@ than silently producing a meal.
 
 The Gemini free tier may use submitted content to improve Google products. Use non-sensitive test
 images and review Google's current API terms before handling personal images.
+
+## Gemini conversational assistant
+
+`POST /api/chat` accepts up to 20 user/assistant messages. Gemini can answer
+general nutrition questions and call authenticated backend tools to:
+
+- read or create a goal
+- log a meal after collecting all required values
+- list diary entries over a date range
+- retrieve calorie, macro, micronutrient, and goal-vs-actual reports
+
+Tool calls reuse the same services as the REST UI, so JWT user isolation and
+validation rules still apply. The backend limits consecutive tool rounds and
+returns the names of tools used for UI transparency. Conversation history is
+sent by the browser with each request; provider interaction IDs are used only
+inside one server request while resolving tool calls.
 
 ## Verification and production builds
 
@@ -304,7 +322,7 @@ backend/src/main/java/com/nourish/tracker/
 backend/src/main/resources/db/migration/
   Flyway schema and seed migrations
 frontend/src/
-  pages/        dashboard, diary, meal form, goals, reports
+  pages/        dashboard, diary, meal form, goals, reports, chat, auth
   components/   application shell and reusable UI
   api.ts        typed REST client
 ```
