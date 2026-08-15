@@ -10,7 +10,7 @@ import {
   LoadingBlock,
   PageHeader,
 } from '../components/UI'
-import { formatDateTime, fromLocalInput } from '../dates'
+import { formatDateTime } from '../dates'
 import type { Goal, GoalInput } from '../types'
 
 const PAGE_SIZE = 8
@@ -80,7 +80,7 @@ export function GoalsPage() {
       await api.goals.create({
         ...goal,
         effectiveFrom: effectiveFrom
-          ? fromLocalInput(effectiveFrom)
+          ? `${effectiveFrom}T00:00:00Z`
           : undefined,
       })
       setEffectiveFrom('')
@@ -94,7 +94,7 @@ export function GoalsPage() {
   }
 
   async function remove(version: Goal) {
-    if (!window.confirm('Delete this historical goal version?')) return
+    if (!window.confirm('Delete this scheduled goal version?')) return
     try {
       await api.goals.delete(version.id)
       setRevision((value) => value + 1)
@@ -121,7 +121,7 @@ export function GoalsPage() {
             {current ? 'Create a new version' : 'Set your first goal'}
           </h2>
           <p className="mt-1 text-sm text-stone-500">
-            Leave “effective from” empty to begin immediately.
+            Goal versions begin at midnight UTC. Leave the date empty for today.
           </p>
           <form
             className="mt-5 grid gap-4 sm:grid-cols-2"
@@ -157,9 +157,12 @@ export function GoalsPage() {
               onChange={(value) => update('fatGrams', value)}
             />
             <div>
-              <Label>Effective from (optional)</Label>
+              <Label htmlFor="goal-effective-date">
+                Effective date (optional)
+              </Label>
               <Input
-                type="datetime-local"
+                id="goal-effective-date"
+                type="date"
                 value={effectiveFrom}
                 onChange={(event) => setEffectiveFrom(event.target.value)}
               />
@@ -245,6 +248,8 @@ export function GoalsPage() {
                 <tbody className="divide-y divide-stone-100">
                   {history.map((version) => {
                     const isCurrent = current?.id === version.id
+                    const isFuture =
+                      new Date(version.effectiveFrom).getTime() > Date.now()
                     return (
                       <tr key={version.id}>
                         <td className="px-5 py-4 text-stone-600">
@@ -252,6 +257,11 @@ export function GoalsPage() {
                           {isCurrent && (
                             <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
                               Current
+                            </span>
+                          )}
+                          {isFuture && (
+                            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                              Scheduled
                             </span>
                           )}
                         </td>
@@ -267,7 +277,7 @@ export function GoalsPage() {
                           {Number(version.weightGoalKg).toFixed(1)} kg
                         </td>
                         <td className="px-5 py-4 text-right">
-                          {!isCurrent && (
+                          {isFuture && (
                             <button
                               type="button"
                               className="font-semibold text-red-600 hover:underline"
@@ -322,10 +332,12 @@ function GoalNumber({
   min?: number
   max?: number
 }) {
+  const id = `goal-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
     <div>
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
+        id={id}
         type="number"
         min={min}
         max={max}

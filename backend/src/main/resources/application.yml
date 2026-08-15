@@ -24,6 +24,8 @@ spring:
     enabled: true
 
 app:
+  cors:
+    allowed-origin: ${CLIENT_ORIGIN:http://localhost:5173}
   ai:
     gemini:
       api-key: ${GEMINI_API_KEY:}

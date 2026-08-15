@@ -1,10 +1,13 @@
 package com.nourish.tracker;
 
+import com.nourish.tracker.service.DemoUserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
@@ -28,6 +31,21 @@ class CoreCrudApiIntegrationTests {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void isolateDemoUserData() {
+        jdbcTemplate.update(
+                "DELETE FROM food_entries WHERE user_id = ?",
+                DemoUserService.DEMO_USER_ID
+        );
+        jdbcTemplate.update(
+                "DELETE FROM goals WHERE user_id = ?",
+                DemoUserService.DEMO_USER_ID
+        );
+    }
+
     @Test
     void createsAndListsGoalVersionsWithPagination() throws Exception {
         String response = mockMvc.perform(post("/api/goals")
@@ -39,16 +57,35 @@ class CoreCrudApiIntegrationTests {
                                   "carbsGrams": 230,
                                   "fatGrams": 72,
                                   "weightGoalKg": 71,
-                                  "effectiveFrom": "2026-08-10T00:00:00Z"
+                                  "effectiveFrom": "2026-08-10T14:30:00Z"
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.dailyCalorieTarget").value(2200))
+                .andExpect(jsonPath("$.effectiveFrom").value("2026-08-10T00:00:00Z"))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         String id = objectMapper.readTree(response).get("id").asText();
+
+        String futureResponse = mockMvc.perform(post("/api/goals")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "dailyCalorieTarget": 2000,
+                                  "proteinGrams": 150,
+                                  "carbsGrams": 200,
+                                  "fatGrams": 65,
+                                  "weightGoalKg": 69,
+                                  "effectiveFrom": "2099-01-01T12:00:00Z"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String futureId = objectMapper.readTree(futureResponse).get("id").asText();
 
         mockMvc.perform(get("/api/goals/{id}", id))
                 .andExpect(status().isOk())
@@ -61,6 +98,17 @@ class CoreCrudApiIntegrationTests {
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.pagination.limit").value(1))
                 .andExpect(jsonPath("$.pagination.offset").value(1));
+
+        mockMvc.perform(get("/api/goals/current"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id));
+
+        mockMvc.perform(delete("/api/goals/{id}", id))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("EFFECTIVE_GOAL_IMMUTABLE"));
+
+        mockMvc.perform(delete("/api/goals/{id}", futureId))
+                .andExpect(status().isNoContent());
     }
 
     @Test

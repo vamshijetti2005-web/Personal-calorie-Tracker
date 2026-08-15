@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface GoalRepository extends JpaRepository<Goal, UUID> {
     Page<Goal> findByUserIdOrderByEffectiveFromDesc(UUID userId, Pageable pageable);
 
+    boolean existsByUserIdAndEffectiveFrom(UUID userId, Instant effectiveFrom);
+
     Optional<Goal> findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
             UUID userId, Instant asOf);
 }
