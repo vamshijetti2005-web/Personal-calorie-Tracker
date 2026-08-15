@@ -41,6 +41,7 @@ export function EntryFormPage() {
   const navigate = useNavigate()
   const [entry, setEntry] = useState<EntryInput>(initialEntry)
   const [loading, setLoading] = useState(Boolean(id))
+  const [loadFailed, setLoadFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<ExtractionResponse | null>(null)
@@ -70,9 +71,10 @@ export function EntryFormPage() {
           consumedAt: value.consumedAt,
         }),
       )
-      .catch((cause) =>
-        setError(cause instanceof Error ? cause.message : 'Could not load entry'),
-      )
+      .catch((cause) => {
+        setLoadFailed(true)
+        setError(cause instanceof Error ? cause.message : 'Could not load entry')
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -172,7 +174,9 @@ export function EntryFormPage() {
     try {
       const result = await api.ai.extract(file)
       setAnalysis(result)
-      applyExtraction(result.extraction)
+      if (result.status !== 'failed') {
+        applyExtraction(result.extraction)
+      }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Could not analyze the image',
@@ -183,6 +187,21 @@ export function EntryFormPage() {
   }
 
   if (loading) return <LoadingBlock />
+  if (id && loadFailed) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Entry unavailable"
+          title="This meal could not be loaded"
+          description="It may have been deleted or the link may be invalid."
+        />
+        <ErrorBanner error={error} />
+        <Button variant="secondary" onClick={() => navigate('/diary')}>
+          Back to diary
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <form className="space-y-6" onSubmit={(event) => void submit(event)}>
@@ -280,8 +299,9 @@ export function EntryFormPage() {
         <h2 className="font-display text-2xl text-emerald-950">Meal details</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field error={fieldErrors.foodName}>
-            <Label>Food name</Label>
+            <Label htmlFor="food-name">Food name</Label>
             <Input
+              id="food-name"
               value={entry.foodName}
               maxLength={160}
               placeholder="e.g. Rice and dal"
@@ -290,8 +310,9 @@ export function EntryFormPage() {
             />
           </Field>
           <Field error={fieldErrors.mealType}>
-            <Label>Meal type</Label>
+            <Label htmlFor="meal-type">Meal type</Label>
             <Select
+              id="meal-type"
               value={entry.mealType}
               onChange={(event) =>
                 update('mealType', event.target.value as MealType)
@@ -311,8 +332,9 @@ export function EntryFormPage() {
             onChange={(value) => update('quantity', value)}
           />
           <Field error={fieldErrors.servingUnit}>
-            <Label>Serving unit</Label>
+            <Label htmlFor="serving-unit">Serving unit</Label>
             <Input
+              id="serving-unit"
               value={entry.servingUnit}
               maxLength={40}
               placeholder="plate, bowl, g, ml"
@@ -322,8 +344,9 @@ export function EntryFormPage() {
           </Field>
           <div className="sm:col-span-2">
             <Field error={fieldErrors.consumedAt}>
-              <Label>Consumed at</Label>
+              <Label htmlFor="consumed-at">Consumed at</Label>
               <Input
+                id="consumed-at"
                 type="datetime-local"
                 value={toLocalInput(entry.consumedAt)}
                 onChange={(event) =>
@@ -451,10 +474,12 @@ function NumberField({
   min?: number
   error?: string
 }) {
+  const id = `entry-${label.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`
   return (
     <Field error={error}>
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <Input
+        id={id}
         type="number"
         min={min}
         step="0.01"

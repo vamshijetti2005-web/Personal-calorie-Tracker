@@ -21,9 +21,18 @@ export function Card({
   )
 }
 
-export function Label({ children }: { children: ReactNode }) {
+export function Label({
+  children,
+  htmlFor,
+}: {
+  children: ReactNode
+  htmlFor: string
+}) {
   return (
-    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500">
+    <label
+      htmlFor={htmlFor}
+      className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-stone-500"
+    >
       {children}
     </label>
   )
@@ -47,13 +56,12 @@ export function Button({
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'danger'
+  variant?: 'primary' | 'secondary'
 }) {
   const colors = {
     primary: 'bg-emerald-900 text-white hover:bg-emerald-800',
     secondary:
       'border border-stone-200 bg-white text-stone-700 hover:border-emerald-700 hover:text-emerald-900',
-    danger: 'bg-red-50 text-red-700 hover:bg-red-100',
   }[variant]
 
   return (
@@ -126,7 +134,10 @@ export function EmptyState({
 
 export function LoadingBlock() {
   return (
-    <div className="grid min-h-48 place-items-center text-sm text-stone-400">
+    <div
+      aria-live="polite"
+      className="grid min-h-48 place-items-center text-sm text-stone-400"
+    >
       Loading…
     </div>
   )

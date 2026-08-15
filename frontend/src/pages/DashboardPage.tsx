@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -68,30 +68,12 @@ export function DashboardPage() {
     void load()
   }, [today])
 
-  const totals = useMemo(
-    () =>
-      entries.reduce(
-        (sum, entry) => ({
-          calories: sum.calories + Number(entry.calories),
-          protein: sum.protein + Number(entry.proteinGrams),
-          carbs: sum.carbs + Number(entry.carbsGrams),
-          fat: sum.fat + Number(entry.fatGrams),
-        }),
-        {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-      ),
-    [entries],
-  )
-
   if (loading) return <LoadingBlock />
 
   const macroToday = macros?.points[0]
+  const caloriesToday = Number(calories?.points.at(-1)?.calories ?? 0)
   const caloriePercent = goal
-    ? Math.min(100, (totals.calories / goal.dailyCalorieTarget) * 100)
+    ? Math.min(100, (caloriesToday / goal.dailyCalorieTarget) * 100)
     : 0
 
   return (
@@ -129,7 +111,7 @@ export function DashboardPage() {
                 Calories today
               </p>
               <p className="mt-3 font-display text-5xl">
-                {Math.round(totals.calories).toLocaleString()}
+                {Math.round(caloriesToday).toLocaleString()}
                 <span className="ml-2 text-lg text-emerald-100/50">kcal</span>
               </p>
             </div>
@@ -137,13 +119,20 @@ export function DashboardPage() {
               <p>{goal ? `${goal.dailyCalorieTarget} target` : 'No target'}</p>
               {goal && (
                 <p className="mt-1 text-white">
-                  {Math.max(0, goal.dailyCalorieTarget - totals.calories).toFixed(0)}{' '}
+                  {Math.max(0, goal.dailyCalorieTarget - caloriesToday).toFixed(0)}{' '}
                   remaining
                 </p>
               )}
             </div>
           </div>
-          <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10">
+          <div
+            role="progressbar"
+            aria-label="Daily calorie goal progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(caloriePercent)}
+            className="mt-6 h-2 overflow-hidden rounded-full bg-white/10"
+          >
             <div
               className="h-full rounded-full bg-amber-400 transition-all"
               style={{ width: `${caloriePercent}%` }}
@@ -191,19 +180,19 @@ export function DashboardPage() {
           <div className="mt-4 space-y-5">
             <MacroProgress
               label="Protein"
-              value={Number(macroToday?.proteinGrams ?? totals.protein)}
+              value={Number(macroToday?.proteinGrams ?? 0)}
               target={goal?.proteinGrams}
               color="bg-emerald-700"
             />
             <MacroProgress
               label="Carbohydrates"
-              value={Number(macroToday?.carbsGrams ?? totals.carbs)}
+              value={Number(macroToday?.carbsGrams ?? 0)}
               target={goal?.carbsGrams}
               color="bg-amber-500"
             />
             <MacroProgress
               label="Fat"
-              value={Number(macroToday?.fatGrams ?? totals.fat)}
+              value={Number(macroToday?.fatGrams ?? 0)}
               target={goal?.fatGrams}
               color="bg-orange-500"
             />
@@ -288,7 +277,14 @@ function MacroProgress({
           {target ? ` / ${Number(target).toFixed(0)}g` : ''}
         </p>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-stone-100">
+      <div
+        role="progressbar"
+        aria-label={`${label} goal progress`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress)}
+        className="mt-2 h-2 overflow-hidden rounded-full bg-stone-100"
+      >
         <div
           className={`h-full rounded-full ${color}`}
           style={{ width: `${progress}%` }}

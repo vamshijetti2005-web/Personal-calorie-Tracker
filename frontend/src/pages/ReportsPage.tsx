@@ -80,24 +80,27 @@ export function ReportsPage() {
 
       <Card className="grid gap-4 sm:grid-cols-3">
         <div>
-          <Label>From</Label>
+          <Label htmlFor="report-from">From</Label>
           <Input
+            id="report-from"
             type="date"
             value={from}
             onChange={(event) => setFrom(event.target.value)}
           />
         </div>
         <div>
-          <Label>To</Label>
+          <Label htmlFor="report-to">To</Label>
           <Input
+            id="report-to"
             type="date"
             value={to}
             onChange={(event) => setTo(event.target.value)}
           />
         </div>
         <div>
-          <Label>Group charts by</Label>
+          <Label htmlFor="report-granularity">Group charts by</Label>
           <Select
+            id="report-granularity"
             value={granularity}
             onChange={(event) =>
               setGranularity(event.target.value as 'day' | 'week')
@@ -332,7 +335,14 @@ function MicroTile({
         {Number(value).toFixed(1)}
         <span className="ml-1 font-sans text-xs text-stone-400">{unit}/day</span>
       </p>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200">
+      <div
+        role="progressbar"
+        aria-label={`${label} reference target progress`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(percent)}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-stone-200"
+      >
         <div
           className="h-full rounded-full bg-amber-500"
           style={{ width: `${percent}%` }}

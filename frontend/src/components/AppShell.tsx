@@ -22,7 +22,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#f6f3eb] lg:grid lg:grid-cols-[250px_1fr]">
-      <aside className="border-b border-white/10 bg-emerald-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-r">
+      <aside className="relative border-b border-white/10 bg-emerald-950 text-white lg:sticky lg:top-0 lg:h-screen lg:border-r">
         <div className="flex items-center justify-between px-5 py-5 lg:block lg:px-7 lg:py-8">
           <div className="flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-2xl bg-amber-400 font-display text-xl text-emerald-950">
@@ -52,7 +52,10 @@ export function AppShell() {
                 }`
               }
             >
-              <span className="grid size-6 place-items-center text-lg">
+              <span
+                aria-hidden="true"
+                className="grid size-6 place-items-center text-lg"
+              >
                 {item.icon}
               </span>
               {item.label}

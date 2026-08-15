@@ -8,15 +8,6 @@ export function addDays(date: string, amount: number): string {
   return value.toISOString().slice(0, 10)
 }
 
-export function formatDate(date: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date.slice(0, 10)}T00:00:00Z`))
-}
-
 export function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',

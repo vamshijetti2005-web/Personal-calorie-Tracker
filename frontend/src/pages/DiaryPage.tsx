@@ -81,8 +81,9 @@ export function DiaryPage() {
 
       <Card className="grid gap-4 sm:grid-cols-3">
         <div>
-          <Label>From</Label>
+          <Label htmlFor="diary-from">From</Label>
           <Input
+            id="diary-from"
             type="date"
             value={from}
             onChange={(event) =>
@@ -91,16 +92,18 @@ export function DiaryPage() {
           />
         </div>
         <div>
-          <Label>To</Label>
+          <Label htmlFor="diary-to">To</Label>
           <Input
+            id="diary-to"
             type="date"
             value={to}
             onChange={(event) => resetFilter(() => setTo(event.target.value))}
           />
         </div>
         <div>
-          <Label>Meal type</Label>
+          <Label htmlFor="diary-meal-type">Meal type</Label>
           <Select
+            id="diary-meal-type"
             value={mealType}
             onChange={(event) =>
               resetFilter(() =>

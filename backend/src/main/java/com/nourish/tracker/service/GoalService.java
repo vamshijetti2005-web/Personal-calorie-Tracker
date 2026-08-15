@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,7 +35,24 @@ public class GoalService {
         goal.setCarbsGrams(request.carbsGrams());
         goal.setFatGrams(request.fatGrams());
         goal.setWeightGoalKg(request.weightGoalKg());
-        goal.setEffectiveFrom(Optional.ofNullable(request.effectiveFrom()).orElseGet(Instant::now));
+        Instant requestedEffectiveFrom =
+                Optional.ofNullable(request.effectiveFrom()).orElseGet(Instant::now);
+        Instant effectiveFrom = requestedEffectiveFrom
+                .atZone(ZoneOffset.UTC)
+                .toLocalDate()
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC);
+        if (goalRepository.existsByUserIdAndEffectiveFrom(
+                DemoUserService.DEMO_USER_ID,
+                effectiveFrom
+        )) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "GOAL_DATE_CONFLICT",
+                    "A goal version already exists for this UTC date"
+            );
+        }
+        goal.setEffectiveFrom(effectiveFrom);
 
         return GoalResponse.from(goalRepository.save(goal));
     }
@@ -65,11 +83,11 @@ public class GoalService {
     @Transactional
     public void delete(UUID id) {
         Goal goal = findOwned(id);
-        if (currentEntity().map(Goal::getId).filter(id::equals).isPresent()) {
+        if (!goal.getEffectiveFrom().isAfter(Instant.now())) {
             throw new ApiException(
                     HttpStatus.CONFLICT,
-                    "CURRENT_GOAL_DELETE_FORBIDDEN",
-                    "Create a newer goal version before deleting the current one"
+                    "EFFECTIVE_GOAL_IMMUTABLE",
+                    "Effective and historical goal versions cannot be deleted"
             );
         }
         goalRepository.delete(goal);
