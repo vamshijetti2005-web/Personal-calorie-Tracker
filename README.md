@@ -1,8 +1,19 @@
 # Personal Calorie Tracker
 
-React frontend + Java (Spring Boot) backend. Built step by step.
+React frontend + Java (Spring Boot) backend for logging meals, managing
+historically accurate goals, and understanding nutrition trends.
 
-**Current step:** 5 — complete core app with Gemini image extraction.
+## Requirements covered
+
+| Assignment requirement | Implementation |
+| --- | --- |
+| Goal setting | Daily calories, macros, and weight goals with immutable UTC-day versions |
+| Meal entry | Breakfast, Lunch, Dinner, and Snacks with serving, macros, and five micros |
+| Time-range listing | Inclusive UTC dates, meal filter, and `limit`/`offset` pagination |
+| Nutrition reports | Calorie trend, macro breakdown, micro summary, and historical goal comparison |
+| AI calorie extraction | Gemini image analysis with confidence, warnings, and editable form prefill |
+| API / frontend separation | React communicates with Spring Boot only through REST APIs |
+| Database persistence | PostgreSQL managed by Flyway and Spring Data JPA |
 
 ## Stack
 
@@ -11,6 +22,15 @@ React frontend + Java (Spring Boot) backend. Built step by step.
 - Flyway migrations
 - React 19, Vite, TypeScript, Tailwind CSS, Recharts
 - Gemini 3.5 Flash image understanding with structured JSON output
+
+## AI-assisted development
+
+AI coding assistance was used for initial project scaffolding, repetitive CRUD
+wiring, chart integration, and test boilerplate. Manual engineering judgment
+defined the data model, immutable goal-history rules, UTC report semantics,
+validation limits, Gemini safety/error behavior, and the final architecture and
+quality review. Generated code was compiled, tested, manually exercised, and
+cleaned before submission.
 
 ## Schema
 
@@ -22,6 +42,9 @@ users 1──* food_entries
 - **goals** are versioned. Saving a goal inserts a new row with `effective_from` so later changes do not rewrite history.
 - **food_entries** store meal type, quantity, calories, macros, and five micros (vitamin C, calcium, iron, vitamin D, potassium).
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for data flow, layering, and historical
+goal-selection details.
+
 ## Run the backend
 
 You need Java 21 and Docker (or a local Postgres 16).
@@ -31,6 +54,16 @@ docker compose up -d
 cd backend
 ./mvnw spring-boot:run
 ```
+
+On Windows without Docker, install PostgreSQL directly and create the defaults
+from SQL Shell:
+
+```sql
+CREATE USER calorie WITH PASSWORD 'calorie';
+CREATE DATABASE calorie_tracker OWNER calorie;
+```
+
+Then run `.\mvnw.cmd spring-boot:run` from `backend`.
 
 The API listens on `http://localhost:8080`.
 
@@ -48,6 +81,9 @@ Default database settings (override with env vars if needed):
 | `DATABASE_URL` | `jdbc:postgresql://localhost:5432/calorie_tracker` |
 | `DATABASE_USER` | `calorie` |
 | `DATABASE_PASSWORD` | `calorie` |
+| `CLIENT_ORIGIN` | `http://localhost:5173` |
+| `GEMINI_API_KEY` | Empty (AI endpoint disabled) |
+| `GEMINI_MODEL` | `gemini-3.5-flash` |
 
 ### Enable Gemini image extraction
 
@@ -84,11 +120,11 @@ Every list API uses `limit` (1–100) and `offset` (0 or greater).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/goals` | Insert a new timestamped goal version |
+| `POST` | `/api/goals` | Insert a goal version effective at UTC midnight |
 | `GET` | `/api/goals/current` | Current effective goal |
 | `GET` | `/api/goals?limit=20&offset=0` | Paginated version history |
 | `GET` | `/api/goals/{id}` | One version |
-| `DELETE` | `/api/goals/{id}` | Delete a non-current version |
+| `DELETE` | `/api/goals/{id}` | Delete a scheduled future version only |
 
 Example:
 
@@ -97,6 +133,10 @@ curl -X POST http://localhost:8080/api/goals \
   -H "Content-Type: application/json" \
   -d '{"dailyCalorieTarget":2100,"proteinGrams":150,"carbsGrams":210,"fatGrams":70,"weightGoalKg":70}'
 ```
+
+Effective and historical goals are immutable because deleting them would change
+past report results. Only future scheduled versions can be removed. One goal
+version is allowed per UTC date.
 
 ### Food entries
 
@@ -170,8 +210,9 @@ The frontend includes:
 - Goal form and paginated version history
 - Calorie, macro, micronutrient, and historical goal-vs-actual charts
 
-For a separately hosted frontend, set `VITE_API_BASE_URL` to the backend origin and configure
-backend CORS before building. Local development needs neither because it uses the Vite proxy.
+For a separately hosted frontend, set `VITE_API_BASE_URL` to the backend origin
+before building and set backend `CLIENT_ORIGIN` to the frontend origin. Local
+development needs neither because it uses the Vite proxy.
 
 ## Step 5 AI image extraction
 
@@ -193,8 +234,55 @@ than silently producing a meal.
 The Gemini free tier may use submitted content to improve Google products. Use non-sensitive test
 images and review Google's current API terms before handling personal images.
 
+## Verification and production builds
+
+Backend tests require the configured PostgreSQL database:
+
+```bash
+cd backend
+./mvnw test
+```
+
+Frontend checks:
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm run build
+```
+
+The frontend production output is written to `frontend/dist/`. Serve those
+static files from a web host and configure `VITE_API_BASE_URL` / `CLIENT_ORIGIN`
+as described above. Run the Spring Boot JAR with:
+
+```bash
+cd backend
+./mvnw clean package
+java -jar target/calorie-tracker-0.0.1-SNAPSHOT.jar
+```
+
+## Project layout
+
+```text
+backend/src/main/java/com/nourish/tracker/
+  api/          REST controllers, request validation, response DTOs, errors
+  service/      goal, diary, reporting, and Gemini business logic
+  repository/   Spring Data repositories and SQL report aggregation
+  domain/       JPA entities and meal type
+  config/       cross-origin API configuration
+backend/src/main/resources/db/migration/
+  Flyway schema and seed migrations
+frontend/src/
+  pages/        dashboard, diary, meal form, goals, reports
+  components/   application shell and reusable UI
+  api.ts        typed REST client
+```
+
 ## Assumptions
 
-- Dates will be stored in UTC.
+- Dates and report boundaries use UTC.
+- Goals take effect at UTC midnight and remain immutable once effective.
 - Meal type is one of `BREAKFAST`, `LUNCH`, `DINNER`, `SNACKS`.
 - A seeded demo user keeps core development moving without auth. The `users` relationship is present so JWT multi-user support can be added later without a schema rewrite.
+- Micronutrient reference values are display context, not medical advice.
