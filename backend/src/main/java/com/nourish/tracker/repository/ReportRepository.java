@@ -73,8 +73,12 @@ public class ReportRepository {
                             COALESCE(SUM(potassium_mg), 0) AS potassium_mg
                         FROM food_entries
                         WHERE user_id = :userId
-                          AND consumed_at >= CAST(:fromDate AS date)
-                          AND consumed_at < CAST(:toDate AS date) + INTERVAL '1 day'
+                          AND consumed_at >= (
+                              CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC'
+                          )
+                          AND consumed_at < (
+                              (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE 'UTC'
+                          )
                         """)
                 .param("userId", userId)
                 .param("fromDate", from)
@@ -93,13 +97,13 @@ public class ReportRepository {
         return jdbcClient.sql("""
                         WITH days AS (
                             SELECT generate_series(
-                                CAST(:fromDate AS date)::timestamp,
-                                CAST(:toDate AS date)::timestamp,
+                                CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC',
+                                CAST(:toDate AS date)::timestamp AT TIME ZONE 'UTC',
                                 INTERVAL '1 day'
                             ) AS day_start
                         )
                         SELECT
-                            days.day_start::date AS report_date,
+                            (days.day_start AT TIME ZONE 'UTC')::date AS report_date,
                             COALESCE(actual.calories, 0) AS actual_calories,
                             COALESCE(actual.protein_grams, 0) AS actual_protein_grams,
                             COALESCE(actual.carbs_grams, 0) AS actual_carbs_grams,
@@ -179,21 +183,31 @@ public class ReportRepository {
         return """
                 WITH periods AS (
                     SELECT generate_series(
-                        date_trunc('%1$s', CAST(:fromDate AS date)::timestamp),
-                        date_trunc('%1$s', CAST(:toDate AS date)::timestamp),
+                        date_trunc(
+                            '%1$s',
+                            CAST(:fromDate AS date)::timestamp
+                        ) AT TIME ZONE 'UTC',
+                        date_trunc(
+                            '%1$s',
+                            CAST(:toDate AS date)::timestamp
+                        ) AT TIME ZONE 'UTC',
                         INTERVAL '1 %1$s'
                     ) AS period_start
                 )
                 SELECT
-                    periods.period_start::date AS period_start,
+                    (periods.period_start AT TIME ZONE 'UTC')::date AS period_start,
                     %2$s
                 FROM periods
                 LEFT JOIN food_entries entry
                   ON entry.user_id = :userId
                  AND entry.consumed_at >= periods.period_start
                  AND entry.consumed_at < periods.period_start + INTERVAL '1 %1$s'
-                 AND entry.consumed_at >= CAST(:fromDate AS date)
-                 AND entry.consumed_at < CAST(:toDate AS date) + INTERVAL '1 day'
+                 AND entry.consumed_at >= (
+                     CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC'
+                 )
+                 AND entry.consumed_at < (
+                     (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE 'UTC'
+                 )
                 GROUP BY periods.period_start
                 ORDER BY periods.period_start
                 """.formatted(unit, aggregates);
