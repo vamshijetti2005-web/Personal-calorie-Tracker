@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { api } from '../api'
-import { useAuth } from '../context/authContext'
+import { useAuth } from '../context/authState'
 
 const navItems = [
   { to: '/', label: 'Today', icon: '◒' },
