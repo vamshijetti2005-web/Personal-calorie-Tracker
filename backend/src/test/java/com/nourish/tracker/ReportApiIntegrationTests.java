@@ -1,5 +1,6 @@
 package com.nourish.tracker;
 
+import com.nourish.tracker.service.DemoUserService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,17 @@ class ReportApiIntegrationTests {
     void aggregatesCaloriesMacrosMicrosAndHistoricalGoals() throws Exception {
         // Prove report days stay UTC even when PostgreSQL uses a local timezone.
         jdbcTemplate.execute("SET LOCAL TIME ZONE 'Asia/Kolkata'");
+
+        // Isolate expected totals from meals already present in a developer's
+        // database. @Transactional rolls these deletes back after the test.
+        jdbcTemplate.update(
+                "DELETE FROM food_entries WHERE user_id = ?",
+                DemoUserService.DEMO_USER_ID
+        );
+        jdbcTemplate.update(
+                "DELETE FROM goals WHERE user_id = ?",
+                DemoUserService.DEMO_USER_ID
+        );
 
         createGoal(2300, "2026-08-10T00:00:00Z");
         createGoal(2100, "2026-08-12T00:00:00Z");
