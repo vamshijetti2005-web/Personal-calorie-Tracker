@@ -12,13 +12,14 @@ import {
   PageHeader,
   Select,
 } from '../components/UI'
-import { addDays, formatDateTime, todayUtc } from '../dates'
+import { addDays, browserTimeZone, formatDateTime, todayLocal } from '../dates'
 import type { FoodEntry, MealType } from '../types'
 
 const PAGE_SIZE = 10
 
 export function DiaryPage() {
-  const today = todayUtc()
+  const today = todayLocal()
+  const timeZone = browserTimeZone()
   const [from, setFrom] = useState(addDays(today, -6))
   const [to, setTo] = useState(today)
   const [mealType, setMealType] = useState<MealType | ''>('')
@@ -33,7 +34,7 @@ export function DiaryPage() {
     setLoading(true)
     setError(null)
     api.entries
-      .list({ from, to, mealType, limit: PAGE_SIZE, offset })
+      .list({ from, to, mealType, limit: PAGE_SIZE, offset, timeZone })
       .then((page) => {
         setEntries(page.data)
         setTotal(page.pagination.total)
@@ -42,7 +43,7 @@ export function DiaryPage() {
         setError(cause instanceof Error ? cause.message : 'Could not load diary'),
       )
       .finally(() => setLoading(false))
-  }, [from, to, mealType, offset, revision])
+  }, [from, to, mealType, offset, revision, timeZone])
 
   function resetFilter(update: () => void) {
     update()

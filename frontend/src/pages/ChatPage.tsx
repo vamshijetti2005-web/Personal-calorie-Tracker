@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { api } from '../api'
 import { Button, Card, ErrorBanner, PageHeader } from '../components/UI'
+import { browserTimeZone } from '../dates'
 import type { ChatMessage } from '../types'
 
 const welcome: ChatMessage = {
@@ -54,7 +55,7 @@ export function ChatPage() {
     setLastTools([])
 
     try {
-      const response = await api.chat.send(nextMessages)
+      const response = await api.chat.send(nextMessages, browserTimeZone())
       setMessages((current) => [
         ...current,
         { role: 'assistant', content: response.reply },

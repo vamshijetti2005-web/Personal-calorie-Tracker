@@ -100,6 +100,14 @@ class ReportApiIntegrationTests {
                 .andExpect(jsonPath("$.points[2].calories").value(700));
 
         mockMvc.perform(get("/api/reports/calories")
+                        .param("from", "2026-08-13")
+                        .param("to", "2026-08-13")
+                        .param("granularity", "day")
+                        .param("timeZone", "Asia/Kolkata"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.points[0].calories").value(700));
+
+        mockMvc.perform(get("/api/reports/calories")
                         .param("from", "2026-08-10")
                         .param("to", "2026-08-16")
                         .param("granularity", "week"))

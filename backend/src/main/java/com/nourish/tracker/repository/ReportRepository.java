@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,13 +28,14 @@ public class ReportRepository {
             UUID userId,
             LocalDate from,
             LocalDate to,
-            ReportGranularity granularity
+            ReportGranularity granularity,
+            ZoneId timeZone
     ) {
         String sql = periodSql(granularity, """
                 COALESCE(SUM(entry.calories), 0) AS calories
                 """);
 
-        return reportQuery(sql, userId, from, to)
+        return reportQuery(sql, userId, from, to, timeZone)
                 .query((resultSet, rowNumber) -> new CaloriePoint(
                         resultSet.getObject("period_start", LocalDate.class),
                         resultSet.getBigDecimal("calories")
@@ -45,7 +47,8 @@ public class ReportRepository {
             UUID userId,
             LocalDate from,
             LocalDate to,
-            ReportGranularity granularity
+            ReportGranularity granularity,
+            ZoneId timeZone
     ) {
         String sql = periodSql(granularity, """
                 COALESCE(SUM(entry.protein_grams), 0) AS protein_grams,
@@ -53,7 +56,7 @@ public class ReportRepository {
                 COALESCE(SUM(entry.fat_grams), 0) AS fat_grams
                 """);
 
-        return reportQuery(sql, userId, from, to)
+        return reportQuery(sql, userId, from, to, timeZone)
                 .query((resultSet, rowNumber) -> new MacroPoint(
                         resultSet.getObject("period_start", LocalDate.class),
                         resultSet.getBigDecimal("protein_grams"),
@@ -63,7 +66,12 @@ public class ReportRepository {
                 .list();
     }
 
-    public Micronutrients micronutrientTotals(UUID userId, LocalDate from, LocalDate to) {
+    public Micronutrients micronutrientTotals(
+            UUID userId,
+            LocalDate from,
+            LocalDate to,
+            ZoneId timeZone
+    ) {
         return jdbcClient.sql("""
                         SELECT
                             COALESCE(SUM(vitamin_c_mg), 0) AS vitamin_c_mg,
@@ -74,15 +82,16 @@ public class ReportRepository {
                         FROM food_entries
                         WHERE user_id = :userId
                           AND consumed_at >= (
-                              CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC'
+                              CAST(:fromDate AS date)::timestamp AT TIME ZONE :timeZone
                           )
                           AND consumed_at < (
-                              (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE 'UTC'
+                              (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE :timeZone
                           )
                         """)
                 .param("userId", userId)
                 .param("fromDate", from)
                 .param("toDate", to)
+                .param("timeZone", timeZone.getId())
                 .query((resultSet, rowNumber) -> new Micronutrients(
                         resultSet.getBigDecimal("vitamin_c_mg"),
                         resultSet.getBigDecimal("calcium_mg"),
@@ -93,17 +102,22 @@ public class ReportRepository {
                 .single();
     }
 
-    public List<GoalVsActualPoint> goalVsActual(UUID userId, LocalDate from, LocalDate to) {
+    public List<GoalVsActualPoint> goalVsActual(
+            UUID userId,
+            LocalDate from,
+            LocalDate to,
+            ZoneId timeZone
+    ) {
         return jdbcClient.sql("""
                         WITH days AS (
                             SELECT generate_series(
-                                CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC',
-                                CAST(:toDate AS date)::timestamp AT TIME ZONE 'UTC',
+                                CAST(:fromDate AS date)::timestamp AT TIME ZONE :timeZone,
+                                CAST(:toDate AS date)::timestamp AT TIME ZONE :timeZone,
                                 INTERVAL '1 day'
                             ) AS day_start
                         )
                         SELECT
-                            (days.day_start AT TIME ZONE 'UTC')::date AS report_date,
+                            (days.day_start AT TIME ZONE :timeZone)::date AS report_date,
                             COALESCE(actual.calories, 0) AS actual_calories,
                             COALESCE(actual.protein_grams, 0) AS actual_protein_grams,
                             COALESCE(actual.carbs_grams, 0) AS actual_carbs_grams,
@@ -141,6 +155,7 @@ public class ReportRepository {
                 .param("userId", userId)
                 .param("fromDate", from)
                 .param("toDate", to)
+                .param("timeZone", timeZone.getId())
                 .query((resultSet, rowNumber) -> {
                     BigDecimal goalCalories = resultSet.getBigDecimal("goal_calories");
                     NutritionValues goal = goalCalories == null
@@ -170,12 +185,14 @@ public class ReportRepository {
             String sql,
             UUID userId,
             LocalDate from,
-            LocalDate to
+            LocalDate to,
+            ZoneId timeZone
     ) {
         return jdbcClient.sql(sql)
                 .param("userId", userId)
                 .param("fromDate", from)
-                .param("toDate", to);
+                .param("toDate", to)
+                .param("timeZone", timeZone.getId());
     }
 
     private String periodSql(ReportGranularity granularity, String aggregates) {
@@ -186,16 +203,16 @@ public class ReportRepository {
                         date_trunc(
                             '%1$s',
                             CAST(:fromDate AS date)::timestamp
-                        ) AT TIME ZONE 'UTC',
+                        ) AT TIME ZONE :timeZone,
                         date_trunc(
                             '%1$s',
                             CAST(:toDate AS date)::timestamp
-                        ) AT TIME ZONE 'UTC',
+                        ) AT TIME ZONE :timeZone,
                         INTERVAL '1 %1$s'
                     ) AS period_start
                 )
                 SELECT
-                    (periods.period_start AT TIME ZONE 'UTC')::date AS period_start,
+                    (periods.period_start AT TIME ZONE :timeZone)::date AS period_start,
                     %2$s
                 FROM periods
                 LEFT JOIN food_entries entry
@@ -203,10 +220,10 @@ public class ReportRepository {
                  AND entry.consumed_at >= periods.period_start
                  AND entry.consumed_at < periods.period_start + INTERVAL '1 %1$s'
                  AND entry.consumed_at >= (
-                     CAST(:fromDate AS date)::timestamp AT TIME ZONE 'UTC'
+                     CAST(:fromDate AS date)::timestamp AT TIME ZONE :timeZone
                  )
                  AND entry.consumed_at < (
-                     (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE 'UTC'
+                     (CAST(:toDate AS date) + 1)::timestamp AT TIME ZONE :timeZone
                  )
                 GROUP BY periods.period_start
                 ORDER BY periods.period_start

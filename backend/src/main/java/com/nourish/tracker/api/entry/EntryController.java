@@ -45,9 +45,10 @@ public class EntryController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) MealType mealType,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
-            @RequestParam(defaultValue = "0") @Min(0) long offset
+            @RequestParam(defaultValue = "0") @Min(0) long offset,
+            @RequestParam(defaultValue = "UTC") String timeZone
     ) {
-        return entryService.list(from, to, mealType, limit, offset);
+        return entryService.list(from, to, mealType, limit, offset, timeZone);
     }
 
     @GetMapping("/{id}")

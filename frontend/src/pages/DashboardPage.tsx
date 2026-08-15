@@ -15,7 +15,7 @@ import {
   LoadingBlock,
   PageHeader,
 } from '../components/UI'
-import { addDays, formatDateTime, todayUtc } from '../dates'
+import { addDays, browserTimeZone, formatDateTime, todayLocal } from '../dates'
 import type {
   CalorieReport,
   FoodEntry,
@@ -32,7 +32,8 @@ const meals: Array<{ type: MealType; label: string }> = [
 ]
 
 export function DashboardPage() {
-  const today = todayUtc()
+  const today = todayLocal()
+  const timeZone = browserTimeZone()
   const [goal, setGoal] = useState<Goal | null>(null)
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [calories, setCalories] = useState<CalorieReport | null>(null)
@@ -46,9 +47,14 @@ export function DashboardPage() {
       setError(null)
       try {
         const [entryPage, calorieData, macroData] = await Promise.all([
-          api.entries.list({ from: today, to: today, limit: 100 }),
-          api.reports.calories(addDays(today, -6), today, 'day'),
-          api.reports.macros(today, today, 'day'),
+          api.entries.list({
+            from: today,
+            to: today,
+            limit: 100,
+            timeZone,
+          }),
+          api.reports.calories(addDays(today, -6), today, 'day', timeZone),
+          api.reports.macros(today, today, 'day', timeZone),
         ])
         setEntries(entryPage.data)
         setCalories(calorieData)
@@ -66,7 +72,7 @@ export function DashboardPage() {
       }
     }
     void load()
-  }, [today])
+  }, [timeZone, today])
 
   if (loading) return <LoadingBlock />
 
@@ -83,8 +89,7 @@ export function DashboardPage() {
           weekday: 'long',
           month: 'long',
           day: 'numeric',
-          timeZone: 'UTC',
-        }).format(new Date(`${today}T00:00:00Z`))}
+        }).format(new Date(`${today}T00:00:00`))}
         title="Your day, in balance."
         description="A clear look at what you have eaten and where you stand against today's targets."
         action={<LinkButton to="/log">+ Log a meal</LinkButton>}

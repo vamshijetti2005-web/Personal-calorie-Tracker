@@ -136,6 +136,7 @@ export const api = {
       mealType?: MealType | ''
       limit?: number
       offset?: number
+      timeZone?: string
     }) =>
       request<PageResponse<FoodEntry>>(
         `/api/entries${query({
@@ -144,6 +145,7 @@ export const api = {
           mealType: params.mealType || undefined,
           limit: params.limit ?? 20,
           offset: params.offset ?? 0,
+          timeZone: params.timeZone,
         })}`,
       ),
     create: (input: EntryInput) =>
@@ -161,21 +163,31 @@ export const api = {
   },
 
   reports: {
-    calories: (from: string, to: string, granularity: 'day' | 'week') =>
+    calories: (
+      from: string,
+      to: string,
+      granularity: 'day' | 'week',
+      timeZone?: string,
+    ) =>
       request<CalorieReport>(
-        `/api/reports/calories${query({ from, to, granularity })}`,
+        `/api/reports/calories${query({ from, to, granularity, timeZone })}`,
       ),
-    macros: (from: string, to: string, granularity: 'day' | 'week') =>
+    macros: (
+      from: string,
+      to: string,
+      granularity: 'day' | 'week',
+      timeZone?: string,
+    ) =>
       request<MacroReport>(
-        `/api/reports/macros${query({ from, to, granularity })}`,
+        `/api/reports/macros${query({ from, to, granularity, timeZone })}`,
       ),
-    micros: (from: string, to: string) =>
+    micros: (from: string, to: string, timeZone?: string) =>
       request<MicronutrientReport>(
-        `/api/reports/micros${query({ from, to })}`,
+        `/api/reports/micros${query({ from, to, timeZone })}`,
       ),
-    goalVsActual: (from: string, to: string) =>
+    goalVsActual: (from: string, to: string, timeZone?: string) =>
       request<GoalVsActualReport>(
-        `/api/reports/goal-vs-actual${query({ from, to })}`,
+        `/api/reports/goal-vs-actual${query({ from, to, timeZone })}`,
       ),
   },
 
@@ -191,10 +203,10 @@ export const api = {
   },
 
   chat: {
-    send: (messages: ChatMessage[]) =>
+    send: (messages: ChatMessage[], timeZone: string) =>
       request<ChatResponse>('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({ messages }),
+        body: JSON.stringify({ messages, timeZone }),
       }),
   },
 }

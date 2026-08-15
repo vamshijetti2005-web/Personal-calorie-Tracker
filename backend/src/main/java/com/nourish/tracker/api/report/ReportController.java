@@ -22,33 +22,37 @@ public class ReportController {
     public CalorieReportResponse calories(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(defaultValue = "day") String granularity
+            @RequestParam(defaultValue = "day") String granularity,
+            @RequestParam(defaultValue = "UTC") String timeZone
     ) {
-        return reportService.calories(from, to, granularity);
+        return reportService.calories(from, to, granularity, timeZone);
     }
 
     @GetMapping("/macros")
     public MacroReportResponse macros(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(defaultValue = "day") String granularity
+            @RequestParam(defaultValue = "day") String granularity,
+            @RequestParam(defaultValue = "UTC") String timeZone
     ) {
-        return reportService.macros(from, to, granularity);
+        return reportService.macros(from, to, granularity, timeZone);
     }
 
     @GetMapping("/micros")
     public MicronutrientReportResponse micronutrients(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "UTC") String timeZone
     ) {
-        return reportService.micronutrients(from, to);
+        return reportService.micronutrients(from, to, timeZone);
     }
 
     @GetMapping("/goal-vs-actual")
     public GoalVsActualReportResponse goalVsActual(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(defaultValue = "UTC") String timeZone
     ) {
-        return reportService.goalVsActual(from, to);
+        return reportService.goalVsActual(from, to, timeZone);
     }
 }

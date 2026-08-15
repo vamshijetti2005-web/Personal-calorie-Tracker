@@ -8,6 +8,7 @@ import com.nourish.tracker.api.report.MicronutrientReportResponse;
 import com.nourish.tracker.api.report.MicronutrientReportResponse.Micronutrients;
 import com.nourish.tracker.api.report.ReportGranularity;
 import com.nourish.tracker.repository.ReportRepository;
+import com.nourish.tracker.support.TimeZoneSupport;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -45,8 +47,19 @@ public class ReportService {
             LocalDate to,
             String granularityValue
     ) {
+        return calories(from, to, granularityValue, "UTC");
+    }
+
+    @Transactional(readOnly = true)
+    public CalorieReportResponse calories(
+            LocalDate from,
+            LocalDate to,
+            String granularityValue,
+            String timeZone
+    ) {
         validateRange(from, to);
         ReportGranularity granularity = ReportGranularity.from(granularityValue);
+        ZoneId zoneId = TimeZoneSupport.parse(timeZone);
         return new CalorieReportResponse(
                 granularity.jsonValue(),
                 from,
@@ -55,7 +68,8 @@ public class ReportService {
                         currentUserService.getCurrentUserId(),
                         from,
                         to,
-                        granularity
+                        granularity,
+                        zoneId
                 )
         );
     }
@@ -66,8 +80,19 @@ public class ReportService {
             LocalDate to,
             String granularityValue
     ) {
+        return macros(from, to, granularityValue, "UTC");
+    }
+
+    @Transactional(readOnly = true)
+    public MacroReportResponse macros(
+            LocalDate from,
+            LocalDate to,
+            String granularityValue,
+            String timeZone
+    ) {
         validateRange(from, to);
         ReportGranularity granularity = ReportGranularity.from(granularityValue);
+        ZoneId zoneId = TimeZoneSupport.parse(timeZone);
         return new MacroReportResponse(
                 granularity.jsonValue(),
                 from,
@@ -76,18 +101,30 @@ public class ReportService {
                         currentUserService.getCurrentUserId(),
                         from,
                         to,
-                        granularity
+                        granularity,
+                        zoneId
                 )
         );
     }
 
     @Transactional(readOnly = true)
     public MicronutrientReportResponse micronutrients(LocalDate from, LocalDate to) {
+        return micronutrients(from, to, "UTC");
+    }
+
+    @Transactional(readOnly = true)
+    public MicronutrientReportResponse micronutrients(
+            LocalDate from,
+            LocalDate to,
+            String timeZone
+    ) {
         long dayCount = validateRange(from, to);
+        ZoneId zoneId = TimeZoneSupport.parse(timeZone);
         Micronutrients totals = reportRepository.micronutrientTotals(
                 currentUserService.getCurrentUserId(),
                 from,
-                to
+                to,
+                zoneId
         );
 
         return new MicronutrientReportResponse(
@@ -102,14 +139,25 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public GoalVsActualReportResponse goalVsActual(LocalDate from, LocalDate to) {
+        return goalVsActual(from, to, "UTC");
+    }
+
+    @Transactional(readOnly = true)
+    public GoalVsActualReportResponse goalVsActual(
+            LocalDate from,
+            LocalDate to,
+            String timeZone
+    ) {
         validateRange(from, to);
+        ZoneId zoneId = TimeZoneSupport.parse(timeZone);
         return new GoalVsActualReportResponse(
                 from,
                 to,
                 reportRepository.goalVsActual(
                         currentUserService.getCurrentUserId(),
                         from,
-                        to
+                        to,
+                        zoneId
                 )
         );
     }

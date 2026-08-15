@@ -75,7 +75,8 @@ class ChatToolLoopIntegrationTests {
                                       "role": "user",
                                       "content": "How many calories did I eat today?"
                                     }
-                                  ]
+                                  ],
+                                  "timeZone": "Asia/Kolkata"
                                 }
                                 """))
                 .andExpect(status().isOk())
