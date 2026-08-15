@@ -31,7 +31,7 @@ api (controllers, requests, responses, centralized errors)
 ```
 
 - Controllers translate HTTP input and output.
-- Services own rules such as UTC date ranges, immutable goal history, ownership,
+- Services own rules such as timezone-aware date ranges, immutable goal history, ownership,
   and extraction status.
 - Spring Data repositories handle entity persistence.
 - Spring Security validates HMAC JWTs before protected controllers run.
@@ -95,9 +95,12 @@ cover user/date and user/meal/date access paths.
 
 ## Time ranges and pagination
 
-Date-only API ranges are inclusive UTC calendar days. Internally, the server
-uses `[from midnight, midnight after to)` instants. Report SQL explicitly applies
-UTC rather than relying on the PostgreSQL session timezone.
+The browser sends its IANA timezone (for example, `Asia/Kolkata`) with diary,
+report, and chat requests. Date-only ranges are inclusive calendar days in that
+zone. Internally, the server converts them to `[local midnight, midnight after
+to)` UTC instants. Report SQL groups and labels data in the selected timezone
+rather than relying on either the JVM or PostgreSQL session timezone. API
+clients that omit `timeZone` retain UTC behavior.
 
 All resource-list endpoints use the same contract:
 

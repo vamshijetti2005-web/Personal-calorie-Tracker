@@ -9,7 +9,7 @@ historically accurate goals, and understanding nutrition trends.
 | --- | --- |
 | Goal setting | Daily calories, macros, and weight goals with immutable UTC-day versions |
 | Meal entry | Breakfast, Lunch, Dinner, and Snacks with serving, macros, and five micros |
-| Time-range listing | Inclusive UTC dates, meal filter, and `limit`/`offset` pagination |
+| Time-range listing | Inclusive browser-local dates, meal filter, and `limit`/`offset` pagination |
 | Nutrition reports | Calorie trend, macro breakdown, micro summary, and historical goal comparison |
 | AI calorie extraction | Gemini image analysis with confidence, warnings, and editable form prefill |
 | API / frontend separation | React communicates with Spring Boot only through REST APIs |
@@ -30,7 +30,7 @@ historically accurate goals, and understanding nutrition trends.
 
 AI coding assistance was used for initial project scaffolding, repetitive CRUD
 wiring, chart integration, and test boilerplate. Manual engineering judgment
-defined the data model, immutable goal-history rules, UTC report semantics,
+defined the data model, immutable goal-history rules, timezone-aware reports,
 validation limits, Gemini safety/error behavior, and the final architecture and
 quality review. Generated code was compiled, tested, manually exercised, and
 cleaned before submission.
@@ -175,7 +175,9 @@ version is allowed per UTC date.
 | `DELETE` | `/api/entries/{id}` | Delete an entry |
 | `GET` | `/api/entries?from=2026-08-01&to=2026-08-15&mealType=LUNCH&limit=20&offset=0` | Date range, optional meal filter, pagination |
 
-Date-only ranges are UTC and inclusive at both ends.
+Date-only ranges are inclusive in the requested IANA `timeZone` (for example,
+`Asia/Kolkata`). The frontend sends the browser timezone; API clients that omit
+it default to UTC.
 
 Example:
 
@@ -212,7 +214,8 @@ these responses directly instead of calculating chart data from paginated diary 
 | `GET` | `/api/reports/goal-vs-actual?from=2026-08-01&to=2026-08-15` | Daily actuals against the goal version effective that day |
 
 `granularity` accepts `day` (default) or `week`. Weeks begin Monday. Partial weeks are clipped
-to the requested range. Report ranges are limited to 366 days.
+to the requested range. Report ranges are limited to 366 days. The optional
+`timeZone` query parameter controls calendar-day boundaries and labels.
 
 Micronutrient reference targets are common adult values used only as a chart scale; they are not
 medical advice.
@@ -329,7 +332,7 @@ frontend/src/
 
 ## Assumptions
 
-- Dates and report boundaries use UTC.
+- Timestamps are persisted as UTC instants; diary/report calendar boundaries use the browser's IANA timezone.
 - Goals take effect at UTC midnight and remain immutable once effective.
 - Meal type is one of `BREAKFAST`, `LUNCH`, `DINNER`, `SNACKS`.
 - JWTs are stateless and stored in browser local storage for this web demo.
