@@ -9,6 +9,7 @@ const navItems = [
   { to: '/log', label: 'Log meal', icon: '+' },
   { to: '/goals', label: 'Goals', icon: '◎' },
   { to: '/reports', label: 'Reports', icon: '↗' },
+  { to: '/chat', label: 'Chat', icon: '✦' },
 ]
 
 export function AppShell() {

@@ -1,6 +1,8 @@
 import type {
   AuthResponse,
   CalorieReport,
+  ChatMessage,
+  ChatResponse,
   EntryInput,
   ExtractionResponse,
   FoodEntry,
@@ -186,5 +188,13 @@ export const api = {
         body,
       })
     },
+  },
+
+  chat: {
+    send: (messages: ChatMessage[]) =>
+      request<ChatResponse>('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages }),
+      }),
   },
 }
