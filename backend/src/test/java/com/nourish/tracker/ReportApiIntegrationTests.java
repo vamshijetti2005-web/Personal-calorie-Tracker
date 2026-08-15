@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,8 +26,14 @@ class ReportApiIntegrationTests {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void aggregatesCaloriesMacrosMicrosAndHistoricalGoals() throws Exception {
+        // Prove report days stay UTC even when PostgreSQL uses a local timezone.
+        jdbcTemplate.execute("SET LOCAL TIME ZONE 'Asia/Kolkata'");
+
         createGoal(2300, "2026-08-10T00:00:00Z");
         createGoal(2100, "2026-08-12T00:00:00Z");
 
