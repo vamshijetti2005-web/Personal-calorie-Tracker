@@ -26,6 +26,9 @@ spring:
 app:
   cors:
     allowed-origin: ${CLIENT_ORIGIN:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:dev-only-jwt-secret-change-before-production-123456}
+    expiration-hours: ${JWT_EXPIRATION_HOURS:24}
   ai:
     gemini:
       api-key: ${GEMINI_API_KEY:}

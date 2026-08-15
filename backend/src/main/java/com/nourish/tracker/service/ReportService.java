@@ -29,9 +29,14 @@ public class ReportService {
     );
 
     private final ReportRepository reportRepository;
+    private final CurrentUserService currentUserService;
 
-    public ReportService(ReportRepository reportRepository) {
+    public ReportService(
+            ReportRepository reportRepository,
+            CurrentUserService currentUserService
+    ) {
         this.reportRepository = reportRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional(readOnly = true)
@@ -47,7 +52,7 @@ public class ReportService {
                 from,
                 to,
                 reportRepository.calorieTrend(
-                        DemoUserService.DEMO_USER_ID,
+                        currentUserService.getCurrentUserId(),
                         from,
                         to,
                         granularity
@@ -68,7 +73,7 @@ public class ReportService {
                 from,
                 to,
                 reportRepository.macroTrend(
-                        DemoUserService.DEMO_USER_ID,
+                        currentUserService.getCurrentUserId(),
                         from,
                         to,
                         granularity
@@ -80,7 +85,7 @@ public class ReportService {
     public MicronutrientReportResponse micronutrients(LocalDate from, LocalDate to) {
         long dayCount = validateRange(from, to);
         Micronutrients totals = reportRepository.micronutrientTotals(
-                DemoUserService.DEMO_USER_ID,
+                currentUserService.getCurrentUserId(),
                 from,
                 to
         );
@@ -101,7 +106,11 @@ public class ReportService {
         return new GoalVsActualReportResponse(
                 from,
                 to,
-                reportRepository.goalVsActual(DemoUserService.DEMO_USER_ID, from, to)
+                reportRepository.goalVsActual(
+                        currentUserService.getCurrentUserId(),
+                        from,
+                        to
+                )
         );
     }
 

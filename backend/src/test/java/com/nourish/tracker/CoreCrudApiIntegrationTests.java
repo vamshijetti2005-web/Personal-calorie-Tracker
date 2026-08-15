@@ -1,6 +1,6 @@
 package com.nourish.tracker;
 
-import com.nourish.tracker.service.DemoUserService;
+import com.nourish.tracker.config.DemoAccountInitializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -19,6 +21,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -34,15 +38,23 @@ class CoreCrudApiIntegrationTests {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private WebApplicationContext applicationContext;
+
     @BeforeEach
     void isolateDemoUserData() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(applicationContext)
+                .apply(springSecurity())
+                .defaultRequest(get("/").with(jwt().jwt(token ->
+                        token.subject(DemoAccountInitializer.DEMO_USER_ID.toString()))))
+                .build();
         jdbcTemplate.update(
                 "DELETE FROM food_entries WHERE user_id = ?",
-                DemoUserService.DEMO_USER_ID
+                DemoAccountInitializer.DEMO_USER_ID
         );
         jdbcTemplate.update(
                 "DELETE FROM goals WHERE user_id = ?",
-                DemoUserService.DEMO_USER_ID
+                DemoAccountInitializer.DEMO_USER_ID
         );
     }
 

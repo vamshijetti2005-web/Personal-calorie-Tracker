@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { api } from '../api'
+import { useAuth } from '../context/authContext'
 
 const navItems = [
   { to: '/', label: 'Today', icon: '◒' },
@@ -12,6 +13,7 @@ const navItems = [
 
 export function AppShell() {
   const [online, setOnline] = useState<boolean | null>(null)
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     api
@@ -35,7 +37,16 @@ export function AppShell() {
               </p>
             </div>
           </div>
-          <Status online={online} className="lg:hidden" />
+          <div className="flex items-center gap-3 lg:hidden">
+            <Status online={online} />
+            <button
+              type="button"
+              className="text-xs font-semibold text-emerald-50/70"
+              onClick={logout}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         <nav className="flex gap-1 overflow-x-auto px-3 pb-4 lg:block lg:space-y-1 lg:px-4">
@@ -65,11 +76,17 @@ export function AppShell() {
 
         <div className="absolute bottom-0 hidden w-[250px] border-t border-white/10 p-5 lg:block">
           <Status online={online} />
-          <p className="mt-3 text-xs leading-5 text-emerald-50/45">
-            Single-user demo mode
-            <br />
-            Java + PostgreSQL
+          <p className="mt-3 truncate text-sm font-semibold text-white">
+            {user?.displayName}
           </p>
+          <p className="truncate text-xs text-emerald-50/45">{user?.email}</p>
+          <button
+            type="button"
+            className="mt-3 text-xs font-semibold text-emerald-100/65 hover:text-white"
+            onClick={logout}
+          >
+            Sign out
+          </button>
         </div>
       </aside>
 

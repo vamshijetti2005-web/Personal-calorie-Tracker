@@ -23,20 +23,20 @@ import java.util.UUID;
 @Service
 public class EntryService {
     private final FoodEntryRepository entryRepository;
-    private final DemoUserService demoUserService;
+    private final CurrentUserService currentUserService;
 
     public EntryService(
             FoodEntryRepository entryRepository,
-            DemoUserService demoUserService
+            CurrentUserService currentUserService
     ) {
         this.entryRepository = entryRepository;
-        this.demoUserService = demoUserService;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
     public EntryResponse create(CreateEntryRequest request) {
         FoodEntry entry = new FoodEntry();
-        entry.setUser(demoUserService.getDemoUser());
+        entry.setUser(currentUserService.getCurrentUser());
         applyCreateRequest(entry, request);
         return EntryResponse.from(entryRepository.save(entry));
     }
@@ -64,14 +64,14 @@ public class EntryService {
         Page<FoodEntry> page = mealType == null
                 ? entryRepository
                 .findByUserIdAndConsumedAtGreaterThanEqualAndConsumedAtLessThanOrderByConsumedAtDesc(
-                        DemoUserService.DEMO_USER_ID,
+                        currentUserService.getCurrentUserId(),
                         fromInstant,
                         toExclusive,
                         pageable
                 )
                 : entryRepository
                 .findByUserIdAndMealTypeAndConsumedAtGreaterThanEqualAndConsumedAtLessThanOrderByConsumedAtDesc(
-                        DemoUserService.DEMO_USER_ID,
+                        currentUserService.getCurrentUserId(),
                         mealType,
                         fromInstant,
                         toExclusive,
@@ -132,7 +132,8 @@ public class EntryService {
 
     private FoodEntry findOwned(UUID id) {
         return entryRepository.findById(id)
-                .filter(entry -> DemoUserService.DEMO_USER_ID.equals(entry.getUser().getId()))
+                .filter(entry -> currentUserService.getCurrentUserId()
+                        .equals(entry.getUser().getId()))
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
                         "ENTRY_NOT_FOUND",

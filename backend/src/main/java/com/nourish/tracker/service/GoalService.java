@@ -19,17 +19,20 @@ import java.util.UUID;
 @Service
 public class GoalService {
     private final GoalRepository goalRepository;
-    private final DemoUserService demoUserService;
+    private final CurrentUserService currentUserService;
 
-    public GoalService(GoalRepository goalRepository, DemoUserService demoUserService) {
+    public GoalService(
+            GoalRepository goalRepository,
+            CurrentUserService currentUserService
+    ) {
         this.goalRepository = goalRepository;
-        this.demoUserService = demoUserService;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
     public GoalResponse create(CreateGoalRequest request) {
         Goal goal = new Goal();
-        goal.setUser(demoUserService.getDemoUser());
+        goal.setUser(currentUserService.getCurrentUser());
         goal.setDailyCalorieTarget(request.dailyCalorieTarget());
         goal.setProteinGrams(request.proteinGrams());
         goal.setCarbsGrams(request.carbsGrams());
@@ -43,7 +46,7 @@ public class GoalService {
                 .atStartOfDay()
                 .toInstant(ZoneOffset.UTC);
         if (goalRepository.existsByUserIdAndEffectiveFrom(
-                DemoUserService.DEMO_USER_ID,
+                currentUserService.getCurrentUserId(),
                 effectiveFrom
         )) {
             throw new ApiException(
@@ -60,7 +63,7 @@ public class GoalService {
     @Transactional(readOnly = true)
     public PageResponse<GoalResponse> list(int limit, long offset) {
         var page = goalRepository.findByUserIdOrderByEffectiveFromDesc(
-                DemoUserService.DEMO_USER_ID,
+                currentUserService.getCurrentUserId(),
                 new OffsetLimitPageable(offset, limit)
         );
         return PageResponse.from(page, limit, offset, GoalResponse::from);
@@ -95,7 +98,8 @@ public class GoalService {
 
     private Goal findOwned(UUID id) {
         return goalRepository.findById(id)
-                .filter(goal -> DemoUserService.DEMO_USER_ID.equals(goal.getUser().getId()))
+                .filter(goal -> currentUserService.getCurrentUserId()
+                        .equals(goal.getUser().getId()))
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.NOT_FOUND,
                         "GOAL_NOT_FOUND",
@@ -106,7 +110,7 @@ public class GoalService {
     private Optional<Goal> currentEntity() {
         return goalRepository
                 .findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
-                        DemoUserService.DEMO_USER_ID,
+                        currentUserService.getCurrentUserId(),
                         Instant.now()
                 );
     }
