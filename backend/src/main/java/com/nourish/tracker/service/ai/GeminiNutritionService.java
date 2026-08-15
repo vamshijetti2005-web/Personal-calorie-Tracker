@@ -47,13 +47,13 @@ public class GeminiNutritionService {
     private final String baseUrl;
 
     public GeminiNutritionService(
-            RestClient.Builder restClientBuilder,
             ObjectMapper objectMapper,
             @Value("${app.ai.gemini.api-key:}") String apiKey,
             @Value("${app.ai.gemini.model:gemini-3.5-flash}") String model,
-            @Value("${app.ai.gemini.base-url}") String baseUrl
+            @Value("${app.ai.gemini.base-url:https://generativelanguage.googleapis.com/v1beta}")
+            String baseUrl
     ) {
-        this.restClient = restClientBuilder.build();
+        this.restClient = RestClient.create();
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
