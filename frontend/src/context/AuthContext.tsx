@@ -6,7 +6,7 @@ import {
 } from 'react'
 import { api, getAccessToken, setAccessToken } from '../api'
 import type { User } from '../types'
-import { AuthContext, type AuthContextValue } from './authContext'
+import { AuthContext, type AuthContextValue } from './authState'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
