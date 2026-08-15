@@ -141,6 +141,20 @@ entries are used only to display individual meals.
 Outbound Gemini calls have connect/read timeouts. Missing keys, quota limits,
 provider failures, and malformed responses use distinct error codes.
 
+## Gemini conversational tools
+
+The chat endpoint receives a bounded transcript and starts a fresh Gemini
+interaction for each browser request. Gemini can call a fixed allowlist of
+functions for goals, meals, and reports. The backend executes those calls
+through the existing authenticated services and returns function results to
+Gemini until it produces a user-facing answer.
+
+Provider interaction IDs never come from or return to the browser; they are used
+only while resolving tools inside one request. This prevents users from
+attempting to resume another account's provider-side interaction. A maximum of
+five consecutive tool rounds bounds cost and accidental loops. Tool validation,
+JWT ownership, and immutable-goal rules are identical to the traditional UI.
+
 ## Error handling and validation
 
 Jakarta Bean Validation handles request DTO constraints. `GlobalExceptionHandler`
@@ -163,7 +177,7 @@ secure HTTP-only cookie plus CSRF protection.
 
 ## Deliberate remaining scope
 
-The core assignment and JWT multi-user bonus are complete. Conversational chat
-and PDF import remain optional bonuses and were intentionally deferred until
-after the required goal, diary, report, image-extraction, and account-isolation
-flows were complete and tested.
+The core assignment, JWT multi-user bonus, and conversational-chat bonus are
+complete. PDF import remains optional and was intentionally deferred because
+tabular PDF extraction has substantially higher parsing risk than the completed
+features.

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { RequireAuth } from './components/RequireAuth'
 import { AuthPage } from './pages/AuthPage'
+import { ChatPage } from './pages/ChatPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DiaryPage } from './pages/DiaryPage'
 import { EntryFormPage } from './pages/EntryFormPage'
@@ -26,6 +27,7 @@ function App() {
         <Route path="log/:id" element={<EntryFormPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="chat" element={<ChatPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

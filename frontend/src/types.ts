@@ -140,3 +140,13 @@ export type ExtractionResponse = {
   status: 'ok' | 'partial' | 'failed'
   extraction: NutritionExtraction
 }
+
+export type ChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ChatResponse = {
+  reply: string
+  toolsUsed: string[]
+}
