@@ -1,6 +1,7 @@
 import type {
   CalorieReport,
   EntryInput,
+  ExtractionResponse,
   FoodEntry,
   Goal,
   GoalInput,
@@ -41,7 +42,11 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers)
-  if (options.body && !headers.has('Content-Type')) {
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -134,5 +139,16 @@ export const api = {
       request<GoalVsActualReport>(
         `/api/reports/goal-vs-actual${query({ from, to })}`,
       ),
+  },
+
+  ai: {
+    extract: (image: File) => {
+      const body = new FormData()
+      body.append('image', image)
+      return request<ExtractionResponse>('/api/ai/extract', {
+        method: 'POST',
+        body,
+      })
+    },
   },
 }

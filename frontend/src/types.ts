@@ -103,3 +103,26 @@ export type GoalVsActualReport = {
     goal: NutritionValues | null
   }>
 }
+
+export type NutritionExtraction = {
+  foodName: string | null
+  quantity: number | null
+  servingUnit: string | null
+  calories: number | null
+  proteinGrams: number | null
+  carbsGrams: number | null
+  fatGrams: number | null
+  vitaminCMg: number | null
+  calciumMg: number | null
+  ironMg: number | null
+  vitaminDIU: number | null
+  potassiumMg: number | null
+  confidence: 'high' | 'medium' | 'low'
+  notes: string
+  warnings: string[]
+}
+
+export type ExtractionResponse = {
+  status: 'ok' | 'partial' | 'failed'
+  extraction: NutritionExtraction
+}
