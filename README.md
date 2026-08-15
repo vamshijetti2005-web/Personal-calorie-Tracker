@@ -2,13 +2,14 @@
 
 React frontend + Java (Spring Boot) backend. Built step by step.
 
-**Current step:** 3 — backend CRUD and nutrition-report APIs.
+**Current step:** 4 — backend APIs and React frontend.
 
 ## Stack
 
 - Java 21, Spring Boot 4, Spring Data JPA
 - PostgreSQL 16
 - Flyway migrations
+- React 19, Vite, TypeScript, Tailwind CSS, Recharts
 
 ## Schema
 
@@ -20,7 +21,7 @@ users 1──* food_entries
 - **goals** are versioned. Saving a goal inserts a new row with `effective_from` so later changes do not rewrite history.
 - **food_entries** store meal type, quantity, calories, macros, and five micros (vitamin C, calcium, iron, vitamin D, potassium).
 
-AI extraction and the React app come in later steps.
+AI photo extraction comes in the next step.
 
 ## Run the backend
 
@@ -124,6 +125,29 @@ to the requested range. Report ranges are limited to 366 days.
 
 Micronutrient reference targets are common adult values used only as a chart scale; they are not
 medical advice.
+
+## Run the React frontend
+
+Keep the backend running on port `8080`. In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite proxies `/api` to the Java backend during local development.
+
+The frontend includes:
+
+- Today dashboard with current calorie/macro progress
+- Meal create/edit form with five micronutrients
+- Date-range diary with meal filtering and pagination
+- Goal form and paginated version history
+- Calorie, macro, micronutrient, and historical goal-vs-actual charts
+
+For a separately hosted frontend, set `VITE_API_BASE_URL` to the backend origin and configure
+backend CORS before building. Local development needs neither because it uses the Vite proxy.
 
 ## Assumptions
 
