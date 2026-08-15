@@ -1,13 +1,20 @@
 package com.nourish.tracker;
 
+import com.nourish.tracker.config.DemoAccountInitializer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +24,18 @@ class AiExtractionApiIntegrationTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext applicationContext;
+
+    @BeforeEach
+    void authenticateDemoUser() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(applicationContext)
+                .apply(springSecurity())
+                .defaultRequest(get("/").with(jwt().jwt(token ->
+                        token.subject(DemoAccountInitializer.DEMO_USER_ID.toString()))))
+                .build();
+    }
 
     @Test
     void rejectsMissingOrDisguisedImages() throws Exception {

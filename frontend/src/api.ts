@@ -1,4 +1,5 @@
 import type {
+  AuthResponse,
   CalorieReport,
   EntryInput,
   ExtractionResponse,
@@ -10,9 +11,20 @@ import type {
   MealType,
   MicronutrientReport,
   PageResponse,
+  User,
 } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+const TOKEN_KEY = 'nourish_access_token'
+
+export function getAccessToken(): string | null {
+  return window.localStorage.getItem(TOKEN_KEY)
+}
+
+export function setAccessToken(token: string | null) {
+  if (token) window.localStorage.setItem(TOKEN_KEY, token)
+  else window.localStorage.removeItem(TOKEN_KEY)
+}
 
 type ApiErrorBody = {
   status?: number
@@ -49,6 +61,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   ) {
     headers.set('Content-Type', 'application/json')
   }
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
 
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
   if (response.status === 204) return undefined as T
@@ -56,6 +70,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = (await response.json().catch(() => null)) as T | ApiErrorBody | null
   if (!response.ok) {
     const error = body as ApiErrorBody | null
+    if (response.status === 401 && token) {
+      setAccessToken(null)
+      window.dispatchEvent(new Event('nourish:unauthorized'))
+    }
     throw new ApiError(
       error?.message ?? `Request failed (${response.status})`,
       response.status,
@@ -76,6 +94,24 @@ function query(params: Record<string, string | number | undefined>): string {
 
 export const api = {
   health: () => request<{ ok: boolean; service: string }>('/api/health'),
+
+  auth: {
+    register: (input: {
+      email: string
+      password: string
+      displayName: string
+    }) =>
+      request<AuthResponse>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    login: (input: { email: string; password: string }) =>
+      request<AuthResponse>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    me: () => request<User>('/api/auth/me'),
+  },
 
   goals: {
     current: () => request<Goal>('/api/goals/current'),

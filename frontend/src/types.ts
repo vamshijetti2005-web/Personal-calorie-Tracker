@@ -1,5 +1,19 @@
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACKS'
 
+export type User = {
+  id: string
+  email: string
+  displayName: string
+  createdAt: string
+}
+
+export type AuthResponse = {
+  token: string
+  tokenType: 'Bearer'
+  expiresInSeconds: number
+  user: User
+}
+
 export type Goal = {
   id: string
   dailyCalorieTarget: number
