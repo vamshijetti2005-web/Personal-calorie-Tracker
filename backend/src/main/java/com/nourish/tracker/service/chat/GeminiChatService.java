@@ -4,6 +4,7 @@ import com.nourish.tracker.api.chat.ChatMessage;
 import com.nourish.tracker.api.chat.ChatRequest;
 import com.nourish.tracker.api.chat.ChatResponse;
 import com.nourish.tracker.api.error.ApiException;
+import com.nourish.tracker.support.TimeZoneSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -66,8 +67,9 @@ public class GeminiChatService {
 
     public ChatResponse chat(ChatRequest request) {
         requireConfigured();
+        ZoneId timeZone = TimeZoneSupport.parse(request.timeZone());
 
-        Object input = conversationPrompt(request.messages());
+        Object input = conversationPrompt(request.messages(), timeZone);
         String previousInteractionId = null;
         Set<String> toolsUsed = new LinkedHashSet<>();
 
@@ -84,7 +86,7 @@ public class GeminiChatService {
 
                 Object result;
                 try {
-                    result = toolExecutor.execute(name, arguments);
+                    result = toolExecutor.execute(name, arguments, timeZone.getId());
                 } catch (Exception exception) {
                     result = Map.of("error", safeToolError(exception));
                 }
@@ -169,7 +171,10 @@ public class GeminiChatService {
         }
     }
 
-    private String conversationPrompt(List<ChatMessage> messages) {
+    private String conversationPrompt(
+            List<ChatMessage> messages,
+            ZoneId timeZone
+    ) {
         StringBuilder prompt = new StringBuilder("""
                 You are Nourish, the user's personal nutrition assistant.
                 Use the supplied functions whenever the user asks about their saved
@@ -177,10 +182,11 @@ public class GeminiChatService {
                 saved data. Before logging a meal or creating a goal, ask for any
                 missing required values rather than guessing them. Confirm successful
                 writes clearly. Give concise, practical nutrition information, not
-                medical diagnosis. Dates are UTC. Current UTC date: %s.
+                medical diagnosis. Interpret dates in timezone %s. Current local
+                date in that timezone: %s.
 
                 Conversation:
-                """.formatted(LocalDate.now(ZoneOffset.UTC)));
+                """.formatted(timeZone.getId(), LocalDate.now(timeZone)));
         for (ChatMessage message : messages) {
             prompt.append(message.role().toUpperCase())
                     .append(": ")

@@ -42,7 +42,7 @@ class ChatApiIntegrationTests {
         mockMvc.perform(post("/api/chat")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"messages":[]}
+                                {"messages":[], "timeZone":"Asia/Kolkata"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
@@ -53,7 +53,8 @@ class ChatApiIntegrationTests {
                                 {
                                   "messages": [
                                     {"role": "user", "content": "What is my goal?"}
-                                  ]
+                                  ],
+                                  "timeZone": "Asia/Kolkata"
                                 }
                                 """))
                 .andExpect(status().isServiceUnavailable())

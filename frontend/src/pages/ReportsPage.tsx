@@ -21,7 +21,7 @@ import {
   PageHeader,
   Select,
 } from '../components/UI'
-import { addDays, todayUtc } from '../dates'
+import { addDays, browserTimeZone, todayLocal } from '../dates'
 import type {
   CalorieReport,
   GoalVsActualReport,
@@ -30,7 +30,8 @@ import type {
 } from '../types'
 
 export function ReportsPage() {
-  const today = todayUtc()
+  const today = todayLocal()
+  const timeZone = browserTimeZone()
   const [from, setFrom] = useState(addDays(today, -13))
   const [to, setTo] = useState(today)
   const [granularity, setGranularity] = useState<'day' | 'week'>('day')
@@ -45,10 +46,10 @@ export function ReportsPage() {
     setLoading(true)
     setError(null)
     Promise.all([
-      api.reports.calories(from, to, granularity),
-      api.reports.macros(from, to, granularity),
-      api.reports.micros(from, to),
-      api.reports.goalVsActual(from, to),
+      api.reports.calories(from, to, granularity, timeZone),
+      api.reports.macros(from, to, granularity, timeZone),
+      api.reports.micros(from, to, timeZone),
+      api.reports.goalVsActual(from, to, timeZone),
     ])
       .then(([calorieData, macroData, microData, goalData]) => {
         setCalories(calorieData)
@@ -62,7 +63,7 @@ export function ReportsPage() {
         ),
       )
       .finally(() => setLoading(false))
-  }, [from, to, granularity])
+  }, [from, to, granularity, timeZone])
 
   const goalData = (comparison?.points ?? []).map((point) => ({
     date: point.date,

@@ -9,6 +9,7 @@ import com.nourish.tracker.domain.FoodEntry;
 import com.nourish.tracker.domain.MealType;
 import com.nourish.tracker.repository.FoodEntryRepository;
 import com.nourish.tracker.support.OffsetLimitPageable;
+import com.nourish.tracker.support.TimeZoneSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Service
@@ -49,6 +50,18 @@ public class EntryService {
             int limit,
             long offset
     ) {
+        return list(from, to, mealType, limit, offset, "UTC");
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<EntryResponse> list(
+            LocalDate from,
+            LocalDate to,
+            MealType mealType,
+            int limit,
+            long offset,
+            String timeZone
+    ) {
         if (to.isBefore(from)) {
             throw new ApiException(
                     HttpStatus.BAD_REQUEST,
@@ -57,8 +70,9 @@ public class EntryService {
             );
         }
 
-        Instant fromInstant = from.atStartOfDay().toInstant(ZoneOffset.UTC);
-        Instant toExclusive = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        ZoneId zoneId = TimeZoneSupport.parse(timeZone);
+        Instant fromInstant = from.atStartOfDay(zoneId).toInstant();
+        Instant toExclusive = to.plusDays(1).atStartOfDay(zoneId).toInstant();
         var pageable = new OffsetLimitPageable(offset, limit);
 
         Page<FoodEntry> page = mealType == null

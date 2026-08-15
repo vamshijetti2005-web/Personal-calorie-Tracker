@@ -29,7 +29,7 @@ public class ChatToolExecutor {
         this.reportService = reportService;
     }
 
-    public Object execute(String name, JsonNode arguments) {
+    public Object execute(String name, JsonNode arguments, String timeZone) {
         return switch (name) {
             case "get_current_goal" -> goalService.current();
             case "create_goal" -> goalService.create(new CreateGoalRequest(
@@ -46,25 +46,30 @@ public class ChatToolExecutor {
                     LocalDate.parse(text(arguments, "to")),
                     optionalMealType(arguments, "mealType"),
                     Math.min(optionalInteger(arguments, "limit", 20), 20),
-                    0
+                    0,
+                    timeZone
             );
             case "get_calorie_report" -> reportService.calories(
                     LocalDate.parse(text(arguments, "from")),
                     LocalDate.parse(text(arguments, "to")),
-                    optionalText(arguments, "granularity", "day")
+                    optionalText(arguments, "granularity", "day"),
+                    timeZone
             );
             case "get_macro_report" -> reportService.macros(
                     LocalDate.parse(text(arguments, "from")),
                     LocalDate.parse(text(arguments, "to")),
-                    optionalText(arguments, "granularity", "day")
+                    optionalText(arguments, "granularity", "day"),
+                    timeZone
             );
             case "get_micro_summary" -> reportService.micronutrients(
                     LocalDate.parse(text(arguments, "from")),
-                    LocalDate.parse(text(arguments, "to"))
+                    LocalDate.parse(text(arguments, "to")),
+                    timeZone
             );
             case "get_goal_vs_actual" -> reportService.goalVsActual(
                     LocalDate.parse(text(arguments, "from")),
-                    LocalDate.parse(text(arguments, "to"))
+                    LocalDate.parse(text(arguments, "to")),
+                    timeZone
             );
             default -> throw new IllegalArgumentException("Unknown tool: " + name);
         };
