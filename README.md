@@ -1,149 +1,132 @@
-# Nourish — Personal Calorie Tracker
+# Personal Calorie Tracker
 
-A full-stack app for logging meals, versioning nutrition goals, and reading macro/micro trends. The React client talks to an Express API over REST. Everything lives in PostgreSQL.
+React frontend + Java (Spring Boot) backend. Built step by step.
 
-AI coding assistance was used for scaffolding (Vite/Express/Prisma boilerplate), CRUD route wiring, and Recharts setup. Schema design, goal versioning, server-side aggregation, pagination rules, and the product/UX decisions were specified and reviewed by hand.
+**Current step:** 3 — backend CRUD and nutrition-report APIs.
 
 ## Stack
 
-| Layer | Choice |
-| --- | --- |
-| API | Node.js 20+, Express, TypeScript |
-| ORM | Prisma 6 |
-| Database | PostgreSQL 16 |
-| Web | React 18, Vite, TypeScript, Tailwind CSS |
-| Charts | Recharts |
-| Auth | JWT + bcrypt |
-| Vision / chat | Anthropic Claude or OpenAI GPT-4o |
+- Java 21, Spring Boot 4, Spring Data JPA
+- PostgreSQL 16
+- Flyway migrations
 
-## Requirements covered
+## Schema
 
-1. **Goal setting** — CRUD-style API and UI. Updates insert a new timestamped version so historical comparisons stay honest.
-2. **Meal entry** — Breakfast / Lunch / Dinner / Snacks with quantity, calories, macros, and five micros. Numeric fields are validated (non-negative, capped ranges).
-3. **Time-range listing** — `GET /api/entries?from=&to=&mealType=` with limit/offset pagination. Matching diary UI.
-4. **Reports** — weekly/daily calorie trend, stacked macros, micronutrient summary, goal vs actual. All computed by dedicated aggregation endpoints.
-5. **AI extraction** — upload a label or plate photo; structured nutrition comes back to pre-fill the form, including partial results and warnings.
+```
+users 1──* goals
+users 1──* food_entries
+```
 
-Bonus implemented: **multi-user JWT auth** (data isolated in every query) and a **tool-using chat** that logs meals and reads reports through the same services. PDF bulk import was skipped (highest parsing risk).
+- **goals** are versioned. Saving a goal inserts a new row with `effective_from` so later changes do not rewrite history.
+- **food_entries** store meal type, quantity, calories, macros, and five micros (vitamin C, calcium, iron, vitamin D, potassium).
 
-## Setup
+AI extraction and the React app come in later steps.
 
-### Prerequisites
+## Run the backend
 
-- Node.js 20+
-- Docker (for PostgreSQL) **or** a local Postgres 16 instance
-- Optional: `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` for photo extraction and chat
-
-### 1. Start the database
+You need Java 21 and Docker (or a local Postgres 16).
 
 ```bash
 docker compose up -d
-```
-
-Without Docker, create a database and user that match `backend/.env`.
-
-### 2. Backend
-
-```bash
 cd backend
-cp .env.example .env
-# edit JWT_SECRET (required in production) and optional AI keys
-npm install
-npx prisma generate
-npx prisma migrate deploy
-npm run prisma:seed
-npm run dev
+./mvnw spring-boot:run
 ```
 
-API listens on `http://localhost:3001`.
-
-### 3. Frontend
+The API listens on `http://localhost:8080`.
 
 ```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
+curl http://localhost:8080/api/health
+# {"ok":true,"service":"calorie-tracker"}
 ```
 
-Vite serves `http://localhost:5173` and proxies `/api` to the backend.
+Flyway applies the scripts under `backend/src/main/resources/db/migration/` on startup. Hibernate is set to `validate` — it does not create tables.
 
-### Demo account
+Default database settings (override with env vars if needed):
 
-After seeding:
-
-- Email: `demo@nourish.local`
-- Password: `DemoPass123!`
-
-The seed writes two goal versions and 14 days of meals so reports have something to draw.
-
-## Environment variables
-
-### `backend/.env`
-
-| Name | Purpose |
+| Variable | Default |
 | --- | --- |
-| `DATABASE_URL` | Prisma connection string |
-| `JWT_SECRET` | HMAC secret for access tokens |
-| `JWT_EXPIRES_IN` | Token lifetime (default `7d`) |
-| `PORT` | API port (default `3001`) |
-| `CLIENT_ORIGIN` | CORS origin (default `http://localhost:5173`) |
-| `OPENAI_API_KEY` | Optional GPT-4o vision + chat |
-| `ANTHROPIC_API_KEY` | Optional Claude vision + chat |
-| `AI_PROVIDER` | `auto` (default), `openai`, or `anthropic` |
+| `DATABASE_URL` | `jdbc:postgresql://localhost:5432/calorie_tracker` |
+| `DATABASE_USER` | `calorie` |
+| `DATABASE_PASSWORD` | `calorie` |
 
-### `frontend/.env`
+## Step 2 APIs
 
-| Name | Purpose |
-| --- | --- |
-| `VITE_API_BASE_URL` | Leave empty to use the Vite proxy |
+This step uses one seeded demo user. Authentication and multi-user isolation are a later bonus.
 
-## API
+Every list API uses `limit` (1–100) and `offset` (0 or greater).
 
-All list endpoints take `limit` (1–100, default 20) and `offset` (≥ 0).
+### Goals
 
-Authenticated routes need `Authorization: Bearer <token>`.
-
-| Method | Path | Notes |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/api/auth/register` | `{ email, password, displayName }` |
-| POST | `/api/auth/login` | `{ email, password }` |
-| GET | `/api/auth/me` | Current user |
-| GET | `/api/goals` | Paginated versions, newest `effectiveFrom` first |
-| GET | `/api/goals/current` | Version in force now |
-| GET | `/api/goals/:id` | One version |
-| POST | `/api/goals` | Insert a new version |
-| DELETE | `/api/goals/:id` | Rejected if it is the current version |
-| GET | `/api/entries` | `from`, `to`, optional `mealType` |
-| GET | `/api/entries/:id` | |
-| POST | `/api/entries` | |
-| PATCH | `/api/entries/:id` | |
-| DELETE | `/api/entries/:id` | |
-| GET | `/api/reports/calories` | `from`, `to`, `granularity=day\|week` |
-| GET | `/api/reports/macros` | same |
-| GET | `/api/reports/micros` | totals + daily averages |
-| GET | `/api/reports/goal-vs-actual` | per-day actual vs the goal active that day |
-| POST | `/api/ai/extract` | multipart field `image` |
-| POST | `/api/chat` | `{ messages: [{ role, content }] }` |
-| GET | `/api/health` | Liveness |
+| `POST` | `/api/goals` | Insert a new timestamped goal version |
+| `GET` | `/api/goals/current` | Current effective goal |
+| `GET` | `/api/goals?limit=20&offset=0` | Paginated version history |
+| `GET` | `/api/goals/{id}` | One version |
+| `DELETE` | `/api/goals/{id}` | Delete a non-current version |
 
-Error shape: `{ error: { code, message, details? } }`.
+Example:
+
+```bash
+curl -X POST http://localhost:8080/api/goals \
+  -H "Content-Type: application/json" \
+  -d '{"dailyCalorieTarget":2100,"proteinGrams":150,"carbsGrams":210,"fatGrams":70,"weightGoalKg":70}'
+```
+
+### Food entries
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/entries` | Create an entry |
+| `GET` | `/api/entries/{id}` | Read an entry |
+| `PATCH` | `/api/entries/{id}` | Update supplied fields |
+| `DELETE` | `/api/entries/{id}` | Delete an entry |
+| `GET` | `/api/entries?from=2026-08-01&to=2026-08-15&mealType=LUNCH&limit=20&offset=0` | Date range, optional meal filter, pagination |
+
+Date-only ranges are UTC and inclusive at both ends.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8080/api/entries \
+  -H "Content-Type: application/json" \
+  -d '{"mealType":"LUNCH","foodName":"Rice and dal","quantity":1,"servingUnit":"plate","calories":520,"proteinGrams":20,"carbsGrams":82,"fatGrams":12,"consumedAt":"2026-08-15T12:30:00Z"}'
+```
+
+Validation and application errors use:
+
+```json
+{
+  "timestamp": "2026-08-15T13:00:00Z",
+  "status": 400,
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed",
+  "fieldErrors": {
+    "calories": "must be greater than or equal to 0.0"
+  }
+}
+```
+
+## Step 3 report APIs
+
+Reports are aggregated on the server from persisted entries. The future React app will consume
+these responses directly instead of calculating chart data from paginated diary rows.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/reports/calories?from=2026-08-01&to=2026-08-15&granularity=day` | Zero-filled calorie trend by day or week |
+| `GET` | `/api/reports/macros?from=2026-08-01&to=2026-08-15&granularity=week` | Protein, carb, and fat totals by day or week |
+| `GET` | `/api/reports/micros?from=2026-08-01&to=2026-08-15` | Micronutrient totals, daily averages, and reference targets |
+| `GET` | `/api/reports/goal-vs-actual?from=2026-08-01&to=2026-08-15` | Daily actuals against the goal version effective that day |
+
+`granularity` accepts `day` (default) or `week`. Weeks begin Monday. Partial weeks are clipped
+to the requested range. Report ranges are limited to 366 days.
+
+Micronutrient reference targets are common adult values used only as a chart scale; they are not
+medical advice.
 
 ## Assumptions
 
-- Date filters are **UTC calendar days**. A `YYYY-MM-DD` `to` is inclusive.
-- Micronutrient targets on the reports page are common adult reference values for scale, not medical advice.
-- Photo analysis and chat require a configured LLM key. Without one, those endpoints return `503 AI_UNAVAILABLE` instead of inventing numbers.
-- Multi-user isolation is enforced in repositories (`where: { userId }`). Crossing another user's id returns 404, not the row.
-- PDF import is out of scope for this submission.
-
-## Project layout
-
-```
-backend/src/
-  routes/ controllers/ services/ repositories/ validators/ middleware/
-frontend/src/
-  api/ pages/ components/ context/ hooks-free date helpers
-```
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the goal-versioning and aggregation design.
+- Dates will be stored in UTC.
+- Meal type is one of `BREAKFAST`, `LUNCH`, `DINNER`, `SNACKS`.
+- A seeded demo user keeps core development moving without auth. The `users` relationship is present so JWT multi-user support can be added later without a schema rewrite.

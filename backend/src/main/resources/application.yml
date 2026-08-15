@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: calorie-tracker
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/calorie_tracker}
+    username: ${DATABASE_USER:calorie}
+    password: ${DATABASE_PASSWORD:calorie}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+
+# Hibernate maps entities; Flyway owns the tables. ddl-auto=validate
+# fails fast if the Java model drifts from V1__init.sql.
