@@ -17,6 +17,13 @@ import type { FoodEntry, MealType } from '../types'
 
 const PAGE_SIZE = 10
 
+function isCompleteDate(value: string): boolean {
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00`))
+  )
+}
+
 export function DiaryPage() {
   const today = todayLocal()
   const timeZone = browserTimeZone()
@@ -29,8 +36,20 @@ export function DiaryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [revision, setRevision] = useState(0)
+  const completeDates = isCompleteDate(from) && isCompleteDate(to)
+  const reversedRange = completeDates && from > to
+  const rangeMessage = !completeDates
+    ? 'Choose a complete start and end date to update the diary.'
+    : reversedRange
+      ? 'The start date must be on or before the end date.'
+      : null
 
   useEffect(() => {
+    if (!completeDates || reversedRange) {
+      setLoading(false)
+      setError(null)
+      return
+    }
     setLoading(true)
     setError(null)
     api.entries
@@ -43,7 +62,16 @@ export function DiaryPage() {
         setError(cause instanceof Error ? cause.message : 'Could not load diary'),
       )
       .finally(() => setLoading(false))
-  }, [from, to, mealType, offset, revision, timeZone])
+  }, [
+    completeDates,
+    from,
+    to,
+    mealType,
+    offset,
+    reversedRange,
+    revision,
+    timeZone,
+  ])
 
   function resetFilter(update: () => void) {
     update()
@@ -69,7 +97,7 @@ export function DiaryPage() {
       <PageHeader
         eyebrow="Food history"
         title="Your diary"
-        description="Review meals over any UTC date range, narrow by meal type, and edit individual entries."
+        description="Review meals over any local date range, narrow by meal type, and edit individual entries."
         action={
           <Link
             to="/log"
@@ -87,6 +115,8 @@ export function DiaryPage() {
             id="diary-from"
             type="date"
             value={from}
+            max={isCompleteDate(to) ? to : undefined}
+            aria-describedby="diary-date-guidance"
             onChange={(event) =>
               resetFilter(() => setFrom(event.target.value))
             }
@@ -98,6 +128,8 @@ export function DiaryPage() {
             id="diary-to"
             type="date"
             value={to}
+            min={isCompleteDate(from) ? from : undefined}
+            aria-describedby="diary-date-guidance"
             onChange={(event) => resetFilter(() => setTo(event.target.value))}
           />
         </div>
@@ -119,6 +151,14 @@ export function DiaryPage() {
             <option value="SNACKS">Snacks</option>
           </Select>
         </div>
+        {rangeMessage && (
+          <p
+            id="diary-date-guidance"
+            className="text-sm text-amber-700 sm:col-span-3"
+          >
+            {rangeMessage}
+          </p>
+        )}
       </Card>
 
       <ErrorBanner error={error} />

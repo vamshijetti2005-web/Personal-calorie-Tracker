@@ -60,8 +60,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             Your food. Your goals. Your private nutrition story.
           </p>
           <p className="mt-5 max-w-lg leading-7 text-emerald-100/60">
-            Each account has an isolated diary, goal history, reports, and
-            AI-assisted meal workflow.
+            Track meals, follow your goals, and understand your nutrition
+            through clear reports and AI-powered guidance.
           </p>
         </div>
         <p className="text-xs text-emerald-100/40">
