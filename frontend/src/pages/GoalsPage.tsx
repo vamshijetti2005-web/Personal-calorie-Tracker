@@ -11,19 +11,27 @@ import {
   PageHeader,
 } from '../components/UI'
 import { formatDateTime } from '../dates'
-import type { Goal, GoalInput } from '../types'
+import type { Goal } from '../types'
 
 const PAGE_SIZE = 8
-const defaultGoal: GoalInput = {
-  dailyCalorieTarget: 2100,
-  proteinGrams: 150,
-  carbsGrams: 210,
-  fatGrams: 70,
-  weightGoalKg: 70,
+type GoalForm = {
+  dailyCalorieTarget: string
+  proteinGrams: string
+  carbsGrams: string
+  fatGrams: string
+  weightGoalKg: string
+}
+
+const emptyGoal: GoalForm = {
+  dailyCalorieTarget: '',
+  proteinGrams: '',
+  carbsGrams: '',
+  fatGrams: '',
+  weightGoalKg: '',
 }
 
 export function GoalsPage() {
-  const [goal, setGoal] = useState<GoalInput>(defaultGoal)
+  const [goal, setGoal] = useState<GoalForm>(emptyGoal)
   const [effectiveFrom, setEffectiveFrom] = useState('')
   const [current, setCurrent] = useState<Goal | null>(null)
   const [history, setHistory] = useState<Goal[]>([])
@@ -48,11 +56,11 @@ export function GoalsPage() {
           setCurrent(active)
           if (offset === 0 && revision === 0) {
             setGoal({
-              dailyCalorieTarget: active.dailyCalorieTarget,
-              proteinGrams: Number(active.proteinGrams),
-              carbsGrams: Number(active.carbsGrams),
-              fatGrams: Number(active.fatGrams),
-              weightGoalKg: Number(active.weightGoalKg),
+              dailyCalorieTarget: String(active.dailyCalorieTarget),
+              proteinGrams: String(active.proteinGrams),
+              carbsGrams: String(active.carbsGrams),
+              fatGrams: String(active.fatGrams),
+              weightGoalKg: String(active.weightGoalKg),
             })
           }
         } catch (cause) {
@@ -68,7 +76,7 @@ export function GoalsPage() {
     void load()
   }, [offset, revision])
 
-  function update<K extends keyof GoalInput>(key: K, newValue: GoalInput[K]) {
+  function update<K extends keyof GoalForm>(key: K, newValue: GoalForm[K]) {
     setGoal((value) => ({ ...value, [key]: newValue }))
   }
 
@@ -78,7 +86,11 @@ export function GoalsPage() {
     setError(null)
     try {
       await api.goals.create({
-        ...goal,
+        dailyCalorieTarget: Number(goal.dailyCalorieTarget),
+        proteinGrams: Number(goal.proteinGrams),
+        carbsGrams: Number(goal.carbsGrams),
+        fatGrams: Number(goal.fatGrams),
+        weightGoalKg: Number(goal.weightGoalKg),
         effectiveFrom: effectiveFrom
           ? `${effectiveFrom}T00:00:00Z`
           : undefined,
@@ -327,8 +339,8 @@ function GoalNumber({
   max = 1000,
 }: {
   label: string
-  value: number
-  onChange: (value: number) => void
+  value: string
+  onChange: (value: string) => void
   min?: number
   max?: number
 }) {
@@ -343,7 +355,8 @@ function GoalNumber({
         max={max}
         step="0.01"
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        placeholder="Enter a target"
+        onChange={(event) => onChange(event.target.value)}
         required
       />
     </div>
