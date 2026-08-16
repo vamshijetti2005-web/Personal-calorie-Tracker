@@ -21,6 +21,11 @@ Gemini key stays in the backend process. Vite proxies `/api` to Spring Boot in
 development; separately hosted builds use `VITE_API_BASE_URL` and
 `CLIENT_ORIGIN`.
 
+The Render deployment uses a single container for operational simplicity:
+React is still built independently, then its static production assets are
+packaged into the Spring Boot JAR. The browser continues to use only REST APIs;
+there is no server-side rendering or shared frontend/backend application code.
+
 ## Backend layering
 
 ```text
