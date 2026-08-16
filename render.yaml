@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: nourish-calorie-tracker
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: develop
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: RENDER_DATABASE_URL
+        fromDatabase:
+          name: nourish-calorie-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION_HOURS
+        value: "24"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=75.0
+
+databases:
+  - name: nourish-calorie-db
+    databaseName: nourish
+    user: nourish
+    plan: free
+    region: singapore

@@ -48,6 +48,9 @@ users 1──* food_entries
 See [ARCHITECTURE.md](ARCHITECTURE.md) for data flow, layering, and historical
 goal-selection details.
 
+For a hosted demo, follow the one-Blueprint Render guide in
+[DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Run the backend
 
 You need Java 21 and Docker (or a local Postgres 16).
