@@ -50,7 +50,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           </div>
           <div>
             <p className="font-display text-3xl">Nourish</p>
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-100/55">
+            <p className="text-xs uppercase tracking-[0.2em] text-black/55">
               Daily nutrition
             </p>
           </div>
@@ -59,12 +59,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <p className="max-w-xl font-display text-5xl leading-tight">
             Your food. Your goals. Your private nutrition story.
           </p>
-          <p className="mt-5 max-w-lg leading-7 text-emerald-100/60">
+          <p className="mt-5 max-w-lg leading-7 text-black/60">
             Track meals, follow your goals, and understand your nutrition
             through clear reports and AI-powered guidance.
           </p>
         </div>
-        <p className="text-xs text-emerald-100/40">
+        <p className="text-xs text-black/40">
           Personal Calorie Tracker · Java + React
         </p>
       </section>

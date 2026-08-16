@@ -112,15 +112,15 @@ export function DashboardPage() {
         <Card className="overflow-hidden bg-emerald-950 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/60">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-#000 60%">
                 Calories today
               </p>
               <p className="mt-3 font-display text-5xl">
                 {Math.round(caloriesToday).toLocaleString()}
-                <span className="ml-2 text-lg text-emerald-100/50">kcal</span>
+                <span className="ml-2 text-lg text-#000 60%">kcal</span>
               </p>
             </div>
-            <div className="text-right text-sm text-emerald-100/60">
+            <div className="text-right text-sm text-#000 60%">
               <p>{goal ? `${goal.dailyCalorieTarget} target` : 'No target'}</p>
               {goal && (
                 <p className="mt-1 text-white">

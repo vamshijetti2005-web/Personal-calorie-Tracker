@@ -33,7 +33,7 @@ export function AppShell() {
             </div>
             <div>
               <p className="font-display text-2xl leading-none">Nourish</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-emerald-100/60">
+              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-black/60">
                 Daily nutrition
               </p>
             </div>
@@ -83,7 +83,7 @@ export function AppShell() {
           <p className="truncate text-xs text-emerald-50/45">{user?.email}</p>
           <button
             type="button"
-            className="mt-3 text-xs font-semibold text-emerald-100/65 hover:text-white"
+            className="mt-3 text-xs font-semibold text-black/65 hover:text-white"
             onClick={logout}
           >
             Sign out
