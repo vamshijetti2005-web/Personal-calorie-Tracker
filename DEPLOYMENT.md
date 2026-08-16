@@ -13,7 +13,9 @@ communication remain separated through REST.
 ## Deploy
 
 1. Merge the deployment PR into `develop`.
-2. Create or sign in to a [Render](https://render.com) account.
+2. Open the
+   [Deploy to Render](https://render.com/deploy?repo=https://github.com/vamshijetti2005-web/Personal-calorie-Tracker/tree/develop)
+   link and create or sign in to a Render account.
 3. Connect Render to the GitHub repository.
 4. In the Render dashboard, choose **New → Blueprint**.
 5. Select `Personal-calorie-Tracker` and branch `develop`.
