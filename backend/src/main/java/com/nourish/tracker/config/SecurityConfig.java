@@ -40,7 +40,19 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/health",
                                 "/api/auth/register",
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/",
+                                "/index.html",
+                                "/favicon.svg",
+                                "/assets/**",
+                                "/login",
+                                "/register",
+                                "/diary",
+                                "/log",
+                                "/log/**",
+                                "/goals",
+                                "/reports",
+                                "/chat"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer ->
