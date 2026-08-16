@@ -15,6 +15,23 @@ Password: DemoPass123!
 The Render free instance can take approximately one minute to wake after
 inactivity.
 
+## Demo video
+
+A silent walkthrough of the live deployment is in this repository:
+
+**[docs/nourish-demo.mp4](docs/nourish-demo.mp4)**
+
+| Time | Screen |
+| --- | --- |
+| 0:00 | Sign in, register form, and demo login |
+| 0:55 | Today dashboard, calorie/macro progress, meals |
+| 1:55 | Versioned health goals and history |
+| 2:55 | Log meal form, including Fill from a photo |
+| 4:55 | Diary date range, lunch filter, edit/delete |
+| 6:55 | Reports: calorie trend, macros, goal vs actual |
+| 7:55 | Gemini nutrition chat |
+| 8:55 | Updated Today view and sign out |
+
 ## Requirements covered
 
 | Assignment requirement | Implementation |
