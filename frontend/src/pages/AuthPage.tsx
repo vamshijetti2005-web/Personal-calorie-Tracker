@@ -8,8 +8,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { user, login, register } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(
+    mode === 'login' ? 'demo@nourish.local' : '',
+  )
+  const [password, setPassword] = useState(
+    mode === 'login' ? 'DemoPass123!' : '',
+  )
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -37,12 +41,6 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     }
   }
 
-  function useDemoAccount() {
-    setEmail('demo@nourish.local')
-    setPassword('DemoPass123!')
-    setError(null)
-  }
-
   return (
     <main className="grid min-h-screen bg-[#f6f3eb] lg:grid-cols-2">
       <section className="hidden overflow-hidden bg-emerald-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
@@ -62,8 +60,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             Your food. Your goals. Your private nutrition story.
           </p>
           <p className="mt-5 max-w-lg leading-7 text-emerald-100/60">
-            Each account has an isolated diary, goal history, reports, and
-            AI-assisted meal workflow.
+            Track meals, follow your goals, and understand your nutrition
+            through clear reports and AI-powered guidance.
           </p>
         </div>
         <p className="text-xs text-emerald-100/40">
@@ -95,25 +93,6 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             className="mt-7 space-y-4 rounded-3xl border border-stone-200 bg-white p-6 shadow-[0_20px_55px_-35px_rgba(23,63,53,.45)]"
             onSubmit={(event) => void submit(event)}
           >
-            {mode === 'login' && (
-              <div className="flex items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-amber-900">
-                    Evaluating the app?
-                  </p>
-                  <p className="text-xs text-amber-800/70">
-                    Load the public demo account explicitly.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={useDemoAccount}
-                >
-                  Use demo
-                </Button>
-              </div>
-            )}
             {mode === 'register' && (
               <div>
                 <Label htmlFor="auth-display-name">Display name</Label>
