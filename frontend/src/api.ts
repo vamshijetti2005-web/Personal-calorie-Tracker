@@ -1,0 +1,212 @@
+import type {
+  AuthResponse,
+  CalorieReport,
+  ChatMessage,
+  ChatResponse,
+  EntryInput,
+  ExtractionResponse,
+  FoodEntry,
+  Goal,
+  GoalInput,
+  GoalVsActualReport,
+  MacroReport,
+  MealType,
+  MicronutrientReport,
+  PageResponse,
+  User,
+} from './types'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+const TOKEN_KEY = 'nourish_access_token'
+
+export function getAccessToken(): string | null {
+  return window.localStorage.getItem(TOKEN_KEY)
+}
+
+export function setAccessToken(token: string | null) {
+  if (token) window.localStorage.setItem(TOKEN_KEY, token)
+  else window.localStorage.removeItem(TOKEN_KEY)
+}
+
+type ApiErrorBody = {
+  status?: number
+  code?: string
+  message?: string
+  fieldErrors?: Record<string, string>
+}
+
+export class ApiError extends Error {
+  status: number
+  code?: string
+  fieldErrors: Record<string, string>
+
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    fieldErrors: Record<string, string> = {},
+  ) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+    this.fieldErrors = fieldErrors
+  }
+}
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
+    headers.set('Content-Type', 'application/json')
+  }
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  if (response.status === 204) return undefined as T
+
+  const body = (await response.json().catch(() => null)) as T | ApiErrorBody | null
+  if (!response.ok) {
+    const error = body as ApiErrorBody | null
+    if (response.status === 401 && token) {
+      setAccessToken(null)
+      window.dispatchEvent(new Event('nourish:unauthorized'))
+    }
+    throw new ApiError(
+      error?.message ?? `Request failed (${response.status})`,
+      response.status,
+      error?.code,
+      error?.fieldErrors,
+    )
+  }
+  return body as T
+}
+
+function query(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') search.set(key, String(value))
+  }
+  return `?${search.toString()}`
+}
+
+export const api = {
+  health: () => request<{ ok: boolean; service: string }>('/api/health'),
+
+  auth: {
+    register: (input: {
+      email: string
+      password: string
+      displayName: string
+    }) =>
+      request<AuthResponse>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    login: (input: { email: string; password: string }) =>
+      request<AuthResponse>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    me: () => request<User>('/api/auth/me'),
+  },
+
+  goals: {
+    current: () => request<Goal>('/api/goals/current'),
+    list: (limit = 20, offset = 0) =>
+      request<PageResponse<Goal>>(`/api/goals${query({ limit, offset })}`),
+    create: (input: GoalInput) =>
+      request<Goal>('/api/goals', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    delete: (id: string) =>
+      request<void>(`/api/goals/${id}`, { method: 'DELETE' }),
+  },
+
+  entries: {
+    get: (id: string) => request<FoodEntry>(`/api/entries/${id}`),
+    list: (params: {
+      from: string
+      to: string
+      mealType?: MealType | ''
+      limit?: number
+      offset?: number
+      timeZone?: string
+    }) =>
+      request<PageResponse<FoodEntry>>(
+        `/api/entries${query({
+          from: params.from,
+          to: params.to,
+          mealType: params.mealType || undefined,
+          limit: params.limit ?? 20,
+          offset: params.offset ?? 0,
+          timeZone: params.timeZone,
+        })}`,
+      ),
+    create: (input: EntryInput) =>
+      request<FoodEntry>('/api/entries', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    update: (id: string, input: Partial<EntryInput>) =>
+      request<FoodEntry>(`/api/entries/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    delete: (id: string) =>
+      request<void>(`/api/entries/${id}`, { method: 'DELETE' }),
+  },
+
+  reports: {
+    calories: (
+      from: string,
+      to: string,
+      granularity: 'day' | 'week',
+      timeZone?: string,
+    ) =>
+      request<CalorieReport>(
+        `/api/reports/calories${query({ from, to, granularity, timeZone })}`,
+      ),
+    macros: (
+      from: string,
+      to: string,
+      granularity: 'day' | 'week',
+      timeZone?: string,
+    ) =>
+      request<MacroReport>(
+        `/api/reports/macros${query({ from, to, granularity, timeZone })}`,
+      ),
+    micros: (from: string, to: string, timeZone?: string) =>
+      request<MicronutrientReport>(
+        `/api/reports/micros${query({ from, to, timeZone })}`,
+      ),
+    goalVsActual: (from: string, to: string, timeZone?: string) =>
+      request<GoalVsActualReport>(
+        `/api/reports/goal-vs-actual${query({ from, to, timeZone })}`,
+      ),
+  },
+
+  ai: {
+    extract: (image: File) => {
+      const body = new FormData()
+      body.append('image', image)
+      return request<ExtractionResponse>('/api/ai/extract', {
+        method: 'POST',
+        body,
+      })
+    },
+  },
+
+  chat: {
+    send: (messages: ChatMessage[], timeZone: string) =>
+      request<ChatResponse>('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages, timeZone }),
+      }),
+  },
+}

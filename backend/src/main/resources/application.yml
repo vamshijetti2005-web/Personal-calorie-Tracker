@@ -1,0 +1,39 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: calorie-tracker
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/calorie_tracker}
+    username: ${DATABASE_USER:calorie}
+    password: ${DATABASE_PASSWORD:calorie}
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+
+app:
+  cors:
+    allowed-origin: ${CLIENT_ORIGIN:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:dev-only-jwt-secret-change-before-production-123456}
+    expiration-hours: ${JWT_EXPIRATION_HOURS:24}
+  ai:
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-3.5-flash}
+      base-url: https://generativelanguage.googleapis.com/v1beta
+
+# Hibernate maps entities; Flyway owns the tables. ddl-auto=validate
+# fails fast if the Java model drifts from V1__init.sql.
