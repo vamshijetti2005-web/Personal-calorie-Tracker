@@ -41,6 +41,11 @@ a {
 }
 
 ::selection {
-  color: white;
-  background: #17624f;
+  color: #1f2a28;
+  background: rgba(23, 98, 79, 0.18);
+}
+
+::-moz-selection {
+  color: #1f2a28;
+  background: rgba(23, 98, 79, 0.18);
 }
