@@ -4,7 +4,7 @@ React frontend + Java (Spring Boot) backend for logging meals, managing
 historically accurate goals, and understanding nutrition trends.
 
 ## Live demo
-**https://www.loom.com/share/09496da601514ad4b8fa472291aa5154
+**https://www.loom.com/share/09496da601514ad4b8fa472291aa5154**
 
 ## Deployed Link
 
