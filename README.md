@@ -3,6 +3,18 @@
 React frontend + Java (Spring Boot) backend for logging meals, managing
 historically accurate goals, and understanding nutrition trends.
 
+## Live demo
+
+**https://nourish-calorie-tracker.onrender.com**
+
+```text
+Email: demo@nourish.local
+Password: DemoPass123!
+```
+
+The Render free instance can take approximately one minute to wake after
+inactivity.
+
 ## Requirements covered
 
 | Assignment requirement | Implementation |
