@@ -187,8 +187,8 @@ export function GoalsPage() {
           </form>
         </Card>
 
-        <Card className="bg-emerald-950 text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/60">
+        <Card className="bg-emerald-950 text-black">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black-100/60">
             Currently effective
           </p>
           {current ? (
@@ -197,23 +197,23 @@ export function GoalsPage() {
                 <p className="font-display text-5xl">
                   {current.dailyCalorieTarget.toLocaleString()}
                 </p>
-                <p className="pb-1 text-sm text-emerald-100/55">kcal / day</p>
+                <p className="pb-1 text-sm text-black-100/55">kcal / day</p>
               </div>
               <div className="mt-8 grid grid-cols-3 gap-3">
                 <Target value={current.proteinGrams} label="Protein" />
                 <Target value={current.carbsGrams} label="Carbs" />
                 <Target value={current.fatGrams} label="Fat" />
               </div>
-              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-emerald-100/60">
+              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-black-100/60">
                 <div className="flex justify-between">
                   <span>Weight goal</span>
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-black">
                     {Number(current.weightGoalKg).toFixed(1)} kg
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between">
                   <span>Effective since</span>
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-black">
                     {formatDateTime(current.effectiveFrom)}
                   </span>
                 </div>
@@ -367,7 +367,7 @@ function Target({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-2xl bg-white/[0.08] p-3 text-center">
       <p className="font-display text-2xl">{Number(value).toFixed(0)}g</p>
-      <p className="mt-1 text-[10px] uppercase tracking-wider text-emerald-100/50">
+      <p className="mt-1 text-[10px] uppercase tracking-wider text-black-100/50">
         {label}
       </p>
     </div>
